@@ -408,8 +408,8 @@ cmp.setup({
 		}),
 	},
 	sources = {
-		{ name = "nvim_lsp", priority = 100 },
-		{ name = "luasnip", priority = 50 },
+		{ name = "nvim_lsp", priority = 500 },
+		{ name = "luasnip", priority = 200 },
 		-- { name = "buffer", priority = 10 },
 		{ name = "orgmode" },
 	},
@@ -426,10 +426,12 @@ require("null-ls").setup({
 	},
 })
 
+vim.keymap.set("n", "<leader>R", ':lua require("utils").reload(vim.fn.expand("%:t:r"))<CR>')
+P = vim.pretty_print
+
 require("maps")
 require("settings")
 require("plugins")
 require("org_utils")
 require("snippets")
 
-P = vim.pretty_print
