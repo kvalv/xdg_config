@@ -28,29 +28,20 @@ end
 
 M.telescope_config_files = function(opts)
 	opts = opts or {}
-	local lookup_file = XDG_CONFIG_HOME .. "/" .. "files.txt"
-	local files = vim.fn.readfile(lookup_file)
-	local filtered_files = vim.tbl_filter(function(f)
-		if not Path:new(f):exists() then
-			utils.log.warn(string.format("file '%s' doesn't exist but is listed in '%s'. Ignoring.", f, lookup_file))
-			return false
-		end
-		return true
-	end, files)
+	opts.cwd = XDG_CONFIG_HOME
 
+	opts.entry_maker = function(e)
+		local display = path_relative_to(e, ".config") or e
+		return {
+			display = display,
+			value = opts.cwd .. "/" .. e,
+			ordinal = e,
+		}
+	end
 	pickers.new(opts, {
 		prompt_title = "config files",
-		finder = finders.new_table({
-			results = filtered_files,
-			entry_maker = function(e)
-				local display = path_relative_to(e, ".config") or e
-				return {
-					display = display,
-					value = e,
-					ordinal = e,
-				}
-			end,
-		}),
+		finder = finders.new_oneshot_job({ "git", "-C", XDG_CONFIG_HOME, "ls-files" }, opts),
+		previewer = conf.file_previewer(opts),
 		sorter = conf.generic_sorter(opts),
 	}):find()
 end
@@ -58,7 +49,7 @@ end
 -- TODO: I want a telescope for finding lua files ;  -- is the root directory
 M.packer_lua_files = function()
 	require("telescope.builtin.files").find_files({
-		search_dirs = { vim.env.HOME ..  "/.local/share/nvim/site/pack/packer/start" },
+		search_dirs = { vim.env.HOME .. "/.local/share/nvim/site/pack/packer/start" },
 		entry_maker = function(e)
 			local display = path_relative_to(e, "start") or e
 			return {
