@@ -60,6 +60,7 @@ require("packer").startup(function()
 			})
 		end,
 	})
+    use('nanotee/sqls.nvim')
 end)
 
 --Set colorscheme (order is important here)
@@ -129,12 +130,14 @@ require("telescope").setup({
 	},
 })
 --Add leader shortcuts
-vim.api.nvim_set_keymap(
-	"n",
-	"<leader><space>",
-	[[<cmd>lua require('telescope.builtin').buffers()<CR>]],
-	{ noremap = true, silent = true }
-)
+
+-- vim.api.nvim_set_keymap(
+-- 	"n",
+-- 	"<leader><space>",
+-- 	[[<cmd>lua require('telescope.builtin').buffers()<CR>]],
+-- 	{ noremap = true, silent = true }
+-- )
+
 vim.api.nvim_set_keymap(
 	"n",
 	"<leader>f",
@@ -300,13 +303,20 @@ local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
 
 -- Enable the following language servers
-local servers = { "clangd", "rust_analyzer", "pyright", "tsserver" }
+local servers = { "clangd", "rust_analyzer", "pyright", "tsserver", "gopls",}
 for _, lsp in ipairs(servers) do
 	lspconfig[lsp].setup({
 		on_attach = on_attach,
 		capabilities = capabilities,
 	})
 end
+
+require('lspconfig').sqls.setup{
+    on_attach = function(client, bufnr)
+        require('sqls').on_attach(client, bufnr)
+        on_attach(client, bufnr)
+    end
+}
 
 -- Example custom server
 -- Make runtime files discoverable to the server

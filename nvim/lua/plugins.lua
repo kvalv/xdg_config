@@ -72,3 +72,47 @@ vim.cmd("let test#python#pytest#options = '-s --disable-warnings -vv '")
 
 -- lightbulb
 vim.cmd([[autocmd CursorHold,CursorHoldI * lua require'nvim-lightbulb'.update_lightbulb()]])
+
+-- null-ls -- for benthos
+local null_ls = require("null-ls")
+local helpers = require("null-ls.helpers")
+
+local benthoslint = {
+    name = "hello world",
+    method = null_ls.methods.DIAGNOSTICS,
+    filetypes = { "yaml" },
+    -- null_ls.generator creates an async source
+    -- that spawns the command with the given arguments and options
+    generator = null_ls.generator({
+        command = "benthos",
+        args = { "-c", "$FILENAME", "lint" },
+        to_stdin = true,
+        from_stderr = true,
+        timeout = 5000,
+        to_temp_file = true,
+        -- from_temp_file = true,
+        -- choose an output format (raw, json, or line)
+        format = "line",
+        check_exit_code = function(code, stderr)
+            local success = code <= 1
+
+            if not success then
+              -- can be noisy for things that run often (e.g. diagnostics), but can
+              -- be useful for things that run on demand (e.g. formatting)
+              print(stderr)
+            end
+
+            return success
+        end,
+        -- use helpers to parse the output from string matchers,
+        -- or parse it manually with a function
+        on_output = helpers.diagnostics.from_patterns({
+            {
+                pattern = ".*:? line (%d+): (.*)",
+                groups = { "row", "message" },
+            },
+        }),
+    }),
+}
+
+null_ls.register(benthoslint)
