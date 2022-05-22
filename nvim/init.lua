@@ -437,19 +437,27 @@ require("null-ls").setup({
 })
 
 vim.keymap.set("n", "<leader>R", function()
+
+    -- special case; do we reload the vimrc lua file?
     if vim.env.MYVIMRC == vim.fn.expand('%') then
-        print("reloading config file")
+        print(string.format("reloading vimrc file '%s'." , vim.fn.expand('%:t')))
         vim.cmd('source ' .. vim.env.MYVIMRC)
         return
     end
-    local u = require('utils')
-    local modname = vim.fn.expand("%:t:r")
-    if modname == "init" then
-        -- init.lua is special, take its parent directory; foo/bar/init.lua -> bar
-        modname = vim.fn.expand("%:h:t")
+
+    local base = vim.fn.fnamemodify(vim.fn.expand('$MYVIMRC'), ":h") .. "/lua"
+    local Path = require 'plenary.path'
+    local p = Path:new(vim.fn.expand('%:p')):make_relative(base)
+    local modname, _ = string.gsub(vim.fn.fnamemodify(p, ":r"), "/", ".")
+
+    if vim.endswith(modname, "init") then
+        -- foo.bar.baz.init -> foo.bar.baz
+        modname, _ = string.gsub(modname, "%.init$", "")
     end
+
     print(string.format("reloading module '%s'", modname))
-    u.reload(modname)
+    require('utils').reload(modname)
+
 end, {nowait = true})
 P = vim.pretty_print
 
