@@ -436,7 +436,21 @@ require("null-ls").setup({
 	},
 })
 
-vim.keymap.set("n", "<leader>R", ':lua require("utils").reload(vim.fn.expand("%:t:r"))<CR>')
+vim.keymap.set("n", "<leader>R", function()
+    if vim.env.MYVIMRC == vim.fn.expand('%') then
+        print("reloading config file")
+        vim.cmd('source ' .. vim.env.MYVIMRC)
+        return
+    end
+    local u = require('utils')
+    local modname = vim.fn.expand("%:t:r")
+    if modname == "init" then
+        -- init.lua is special, take its parent directory; foo/bar/init.lua -> bar
+        modname = vim.fn.expand("%:h:t")
+    end
+    print(string.format("reloading module '%s'", modname))
+    u.reload(modname)
+end, {nowait = true})
 P = vim.pretty_print
 
 require("maps")
