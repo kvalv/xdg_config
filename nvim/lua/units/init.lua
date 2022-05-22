@@ -42,16 +42,8 @@ end
 
 --- returns name for a given function node.
 -- raises an error if the node is not a function node
-M.get_function_name = function(node, filetype)
-	local t = lookup[vim.bo.filetype].node
-	if node:type() ~= t then
-		error(string.format("expected node to be of type %s but got %s", t, node:type()))
-	end
-	local ft = filetype or vim.bo.filetype
-	local query = vim.treesitter.query.parse_query(ft, lookup[ft].query)
-
-	local identifier_node = Query.pluck_query(node, query).name
-	return vim.treesitter.query.get_node_text(identifier_node, 0)
+M.get_function_name = function(function_node, filetype)
+    return Query.get_name(function_node)
 end
 
 M.read_file = function(file)
@@ -59,14 +51,16 @@ M.read_file = function(file)
 end
 
 M.add_test_function = function(func_name)
+    local root_node = Query.get_root()
 	local function_node = M.get_closest_function()
 	if function_node == nil then
 		error("node is not a function node; received nil")
 	end
 
-	local name = M.get_function_name(function_node)
+	-- local name = M.get_function_name(function_node)
+    local name = Query.get_name(function_node)
 	local _, _, rowend, _ = function_node:range()
-	local lines = lookup[vim.bo.filetype].template(func_name or ("test_" .. name))
+	local lines = lookup[vim.bo.filetype].template(func_name or ("test_" .. name), function_node, root_node)
 	vim.api.nvim_buf_set_lines(0, rowend + 1, rowend + 1, false, lines)
 	Query.get_root(0, vim.bo.filetype) -- TODO: don't want to call this? update parser??
 end
@@ -74,7 +68,7 @@ end
 local function setup_keymaps()
 	vim.keymap.set("n", "<leader>ut", function()
 		local ft = vim.bo.filetype -- must be go
-		if not vim.tbl_contains({ "python", "go" }, ft) then
+		if not vim.tbl_contains(vim.tbl_keys(lookup), ft) then
 			error("not supported filetype " .. ft)
 		end
 		vim.ui.input({ prompt = "Unit test function name: " }, function(name)
@@ -91,6 +85,7 @@ M.init = function()
 	-- to update this function
 	add_language("go", require("units.langs.go"))
 	add_language("python", require("units.langs.python"))
+	add_language("rust", require("units.langs.rust"))
 
 	setup_keymaps()
 end

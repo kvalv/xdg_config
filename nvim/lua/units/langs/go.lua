@@ -1,5 +1,5 @@
 return {
-	template = function(func_name)
+	template = function(func_name, _, _)
 		return {
 			string.format("func %s(t *testing.T) {", func_name),
 			"    // TODO",

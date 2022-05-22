@@ -1,5 +1,5 @@
 return {
-	template = function(func_name)
+	template = function(func_name, _, _)
 		return {
 			string.format("def %s():", func_name),
 			"    pass  # TODO",
