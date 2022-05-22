@@ -1,57 +1,77 @@
-local null_ls = require("null-ls")
-local Path = require("plenary.path")
-local ts_utils = require("nvim-treesitter.ts_utils")
 local Query = require("units.query")
+local ts_utils = require("nvim-treesitter.ts_utils")
+local locals = require("nvim-treesitter.locals")
+local LangInfo = require("units.langs")
 
 local M = {}
+
+-- a lookup table that contain important information for each filetype
+local lookup = {}
+
+--- register a language
+---@param name string the language name
+---@param lang_info table will create a LangInfo instance from it
+local function add_language(name, lang_info)
+	local o = LangInfo:new(lang_info)
+	lookup[name] = o
+end
 
 M.get_treesitter = function(bufnr)
 	local parser = vim.treesitter.get_parser(bufnr or 0, vim.bo.filetype)
 	local tree = parser:parse()
-	P(tree)
 end
 
-M.get_function_name = function()
+--- returns the closest node of "function_declaration" type (or node_type if specified)
+-- returns nil if it doesnt exist
+function M.get_closest_function(bufnr)
+	Query.get_root(0, vim.bo.filetype) -- TODO: don't want to call this? update parser??
 	local node = ts_utils.get_node_at_cursor()
-	if node:type() ~= "identifier" then
-		error("node must be identifier, this is type " .. node:type())
+	local nt = lookup[vim.bo.filetype].node
+	if node:type() == nt then
+		return node
 	end
+	local scopes = locals.get_scope_tree(node, bufnr or 0)
+
+	for _, value in ipairs(scopes) do
+		if value:type() == nt then
+			return value
+		end
+	end
+	return nil
+end
+
+--- returns name for a given function node.
+-- raises an error if the node is not a function node
+M.get_function_name = function(node, filetype)
+	local t = lookup[vim.bo.filetype].node
+	if node:type() ~= t then
+		error(string.format("expected node to be of type %s but got %s", t, node:type()))
+	end
+	local ft = filetype or vim.bo.filetype
+	local query = vim.treesitter.query.parse_query(ft, lookup[ft].query)
+
+	local identifier_node = Query.pluck_query(node, query).name
+	return vim.treesitter.query.get_node_text(identifier_node, 0)
 end
 
 M.read_file = function(file)
 	return vim.fn.readfile(file)
 end
 
-local replacementCode = {
-	go = function(func_name)
-		return {
-			string.format("func %s(t *testing.T) {", func_name or string.format("Test%s", name)),
-			"    // TODO",
-			"}",
-		}
-	end,
-	python = function(func_name)
-		return {
-			string.format("def %s():", func_name),
-			"    pass  # TODO",
-		}
-	end,
-}
-
 M.add_test_function = function(func_name)
-	local function_node = Query.get_closest_function()
+	local function_node = M.get_closest_function()
 	if function_node == nil then
 		error("node is not a function node; received nil")
 	end
 
-	local name = Query.get_function_name(function_node)
+	local name = M.get_function_name(function_node)
 	local _, _, rowend, _ = function_node:range()
-	local lines = replacementCode[vim.bo.filetype](func_name or ("test_" .. name))
+	local lines = lookup[vim.bo.filetype].template(func_name or ("test_" .. name))
 	vim.api.nvim_buf_set_lines(0, rowend + 1, rowend + 1, false, lines)
 	Query.get_root(0, vim.bo.filetype) -- TODO: don't want to call this? update parser??
 end
 
-M.init = function()
+local function setup_keymaps()
 	vim.keymap.set("n", "<leader>ut", function()
 		local ft = vim.bo.filetype -- must be go
 		if not vim.tbl_contains({ "python", "go" }, ft) then
@@ -66,31 +86,13 @@ M.init = function()
 	end, {})
 end
 
--- local frozen_string_actions = {
--- 	method = null_ls.methods.CODE_ACTION,
--- 	filetypes = { "text", "go", "lua" },
--- 	generator = {
--- 		fn = function(ctx)
+M.init = function()
+	-- TODO: would be nice to scan the directory and insert languages without having
+	-- to update this function
+	add_language("go", require("units.langs.go"))
+	add_language("python", require("units.langs.python"))
 
--- 			return {
--- 				{
--- 					title = "create unit test for function",
--- 					action = function()
--- 						-- vim.api.nvim_buf_set_lines(ctx.bufnr, ctx.row, ctx.row, false, { "something nice", "!!!" })
+	setup_keymaps()
+end
 
---                         -- local params = vim.lsp.util.make_position_params()
---                         -- vim.lsp.buf_request(0, 'textDocument/implementation', params, function(err, result, ctx, config)
---                         --     P(err)
---                         --     P(result)
---                         --     P(ctx)
---                         --     P(config)
---                         -- end)
-
--- 					end,
--- 				},
--- 			}
--- 		end,
--- 	},
--- }
--- null_ls.register(frozen_string_actions)
 return M
