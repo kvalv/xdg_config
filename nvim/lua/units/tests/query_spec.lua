@@ -1,0 +1,28 @@
+local c = require("units")
+local utils = require("utils")
+local query = require("units.query")
+local tutils = require('units.tests.test_utils')
+
+describe("query function node", function()
+    before_each(function()
+        tutils.init()
+        utils.vim_motion("3j")
+    end)
+
+    it("returns node if cursor inside of function", function()
+        local node = query.get_closest_function()
+        assert.equals(node:type(), "function_declaration")
+    end)
+
+    it("returns nil if cursor outside of function", function()
+        utils.vim_motion("gg")
+        local node = query.get_closest_function()
+        assert.is.falsy(node)
+    end)
+
+    it("returns proper function name", function()
+        local node = query.get_closest_function()
+        local name = query.get_function_name(node)
+        assert.are.same("AddNumbers", name)
+    end)
+end)

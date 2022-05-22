@@ -1,3 +1,5 @@
+local Path = require("plenary.path")
+
 local M = {}
 
 M.reload = function(name)
@@ -35,5 +37,14 @@ M.log = require("plenary.log").new({
     plugin = "mk",
     level = "warn",
 })
+
+-- stolen from https://github.com/ThePrimeagen/refactoring.nvim/blob/master/lua/refactoring/tests/utils.lua
+function M.read_file(file)
+    return Path:new("lua", "refactoring", "tests", file):read()
+end
+
+function M.vim_motion(motion)
+    vim.cmd(string.format(':exe "norm! %s\\<esc>"', motion))
+end
 
 return M

@@ -459,3 +459,4 @@ require("plugins")
 require("org_utils")
 require("snippets")
 
+require("units").init()
