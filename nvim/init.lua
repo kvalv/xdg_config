@@ -51,7 +51,7 @@ require("packer").startup(function()
 	use("vim-test/vim-test")
 	use("nvim-orgmode/orgmode")
 	use("lukas-reineke/headlines.nvim")
-    use('JoosepAlviste/nvim-ts-context-commentstring')
+	use("JoosepAlviste/nvim-ts-context-commentstring")
 	use({
 		"akinsho/org-bullets.nvim",
 		config = function()
@@ -60,7 +60,7 @@ require("packer").startup(function()
 			})
 		end,
 	})
-    use('nanotee/sqls.nvim')
+	use("nanotee/sqls.nvim")
 end)
 
 --Set colorscheme (order is important here)
@@ -250,9 +250,9 @@ require("nvim-treesitter.configs").setup({
 			},
 		},
 	},
-    context_commentstring = {
-        enable = true
-    }
+	context_commentstring = {
+		enable = true,
+	},
 })
 require("nvim-treesitter.configs").setup({
 	query_linter = {
@@ -303,7 +303,7 @@ local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
 
 -- Enable the following language servers
-local servers = { "clangd", "rust_analyzer", "pyright", "tsserver", "gopls",}
+local servers = { "clangd", "rust_analyzer", "pyright", "tsserver", "gopls" }
 for _, lsp in ipairs(servers) do
 	lspconfig[lsp].setup({
 		on_attach = on_attach,
@@ -311,12 +311,12 @@ for _, lsp in ipairs(servers) do
 	})
 end
 
-require('lspconfig').sqls.setup{
-    on_attach = function(client, bufnr)
-        require('sqls').on_attach(client, bufnr)
-        on_attach(client, bufnr)
-    end
-}
+require("lspconfig").sqls.setup({
+	on_attach = function(client, bufnr)
+		require("sqls").on_attach(client, bufnr)
+		on_attach(client, bufnr)
+	end,
+})
 
 -- Example custom server
 -- Make runtime files discoverable to the server
@@ -437,28 +437,28 @@ require("null-ls").setup({
 })
 
 vim.keymap.set("n", "<leader>R", function()
+	-- special case; do we reload the vimrc lua file?
+	if vim.env.MYVIMRC == vim.fn.expand("%") then
+		print(string.format("reloading vimrc file '%s'.", vim.fn.expand("%:t")))
+		vim.cmd("source " .. vim.env.MYVIMRC)
+		return
+	end
 
-    -- special case; do we reload the vimrc lua file?
-    if vim.env.MYVIMRC == vim.fn.expand('%') then
-        print(string.format("reloading vimrc file '%s'." , vim.fn.expand('%:t')))
-        vim.cmd('source ' .. vim.env.MYVIMRC)
-        return
-    end
+	local base = vim.fn.fnamemodify(vim.fn.expand("$MYVIMRC"), ":h") .. "/lua"
+	local Path = require("plenary.path")
+	local p = Path:new(vim.fn.expand("%:p")):make_relative(base)
+	local modname, _ = string.gsub(vim.fn.fnamemodify(p, ":r"), "/", ".")
 
-    local base = vim.fn.fnamemodify(vim.fn.expand('$MYVIMRC'), ":h") .. "/lua"
-    local Path = require 'plenary.path'
-    local p = Path:new(vim.fn.expand('%:p')):make_relative(base)
-    local modname, _ = string.gsub(vim.fn.fnamemodify(p, ":r"), "/", ".")
+	if vim.endswith(modname, "init") then
+		-- foo.bar.baz.init -> foo.bar.baz
+		modname, _ = string.gsub(modname, "%.init$", "")
+	end
 
-    if vim.endswith(modname, "init") then
-        -- foo.bar.baz.init -> foo.bar.baz
-        modname, _ = string.gsub(modname, "%.init$", "")
-    end
-
-    print(string.format("reloading module '%s'", modname))
-    require('utils').reload(modname)
-
-end, {nowait = true})
+	print(string.format("reloading module '%s'", modname))
+	require("utils").reload(modname)
+end, {
+	nowait = true,
+})
 P = vim.pretty_print
 
 require("maps")
