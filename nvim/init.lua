@@ -158,16 +158,32 @@ vim.api.nvim_set_keymap(
 )
 vim.api.nvim_set_keymap(
 	"n",
-	"<leader>t",
-	[[<cmd>lua require('telescope.builtin').tags()<CR>]],
-	{ noremap = true, silent = true }
-)
-vim.api.nvim_set_keymap(
-	"n",
 	"<leader>sd",
 	[[<cmd>lua require('telescope.builtin').grep_string()<CR>]],
 	{ noremap = true, silent = true }
 )
+vim.keymap.set("n", "<leader>t", function()
+
+    -- vim.fn.tagfiles() gives a bunch of stupid names that start with term
+    -- if the current buffer is the terminal. Let's filter those out before
+    -- passing it into the picker
+	local tagfiles = vim.tbl_filter(function(fname)
+		return not vim.startswith(fname, "term")
+	end, vim.fn.tagfiles())
+
+    if #tagfiles > 1 then
+        print("warning: found more than one tagfile. Using only first one. This might give unexpected results (lack of tags)")
+    elseif #tagfiles == 0 then
+        print("No tag files found")
+        return
+    end
+    local ctags_file = tagfiles[1]
+
+	require("telescope.builtin").tags({ ctags_file = ctags_file })
+end, {
+	noremap = true,
+	silent = true,
+})
 vim.api.nvim_set_keymap(
 	"n",
 	"<leader>sp",
