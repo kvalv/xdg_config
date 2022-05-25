@@ -1,3 +1,6 @@
+local utils = require("utils")
+local Tuple = require("tuple")
+local ts_utils = require("nvim-treesitter.ts_utils")
 local Query = {}
 Query.__index = Query
 
@@ -50,6 +53,59 @@ Query.exec_query = function(query_str, node)
 		table.insert(items, o)
 	end
 	return items
+end
+
+--- returns the 'smallest' tsnode covering the visual selection
+---@returns table tsnode
+--if no active visual selection ,then the most recent visual selection
+--(registers < and >) are used.
+Query.node_covering_visual_selection = function()
+
+    -- borrow 'a' register to store current location. We'll put back the
+    -- original content (stored in 'a'
+    local row = vim.fn.line('.')
+    local col = vim.fn.col('.')
+    local mark_a = vim.api.nvim_buf_get_mark(0, 'a')
+    vim.api.nvim_buf_set_mark(0, 'a', row, col, {})
+
+    if vim.api.nvim_buf_get_mark(0, '<')[1] == 0 then
+        vim.notify("visual selection not set. Cannot select node.", 3)
+        return
+    end
+
+    utils.vim_motion('`<') -- goto start of visual selection
+	local a = vim.api.nvim_buf_get_mark(0, "<")
+	local b = vim.api.nvim_buf_get_mark(0, ">")
+	local visual_selection = { start = { row = a[1], col = a[2] }, stop = { row = b[1], col = b[2] } }
+
+	local function covers_visual_selection(node, vs)
+		local r0, c0, r1, c1 = node:range()
+        local start = { row = r0, col = c0 }
+        local stop = { row = r1, col = c1 }
+        local t = Tuple.new
+
+        if (t({start.row, start.col}) <= t({vs.start.row, vs.start.col})) and (t({vs.stop.row, vs.stop.col}) <= t({stop.row, stop.col})) then
+			return true
+		end
+		return false
+	end
+
+	local node = ts_utils.get_node_at_cursor(0)
+	while node ~= nil and not covers_visual_selection(node, visual_selection) do
+        node = node:parent()
+	end
+    utils.vim_motion('`ah')
+    if mark_a[1] ~= 0 then
+        vim.api.nvim_buf_set_mark(0, 'a', mark_a[1], mark_a[2], {})
+    else
+        vim.api.nvim_buf_del_mark(0, 'a')  -- leave no trace...
+    end
+
+    return node
+end
+
+Query.append_child = function(parent_node, attribute_name, child_node)
+	-- adds a new child node to a node
 end
 
 --- finds first ancestor of a given type

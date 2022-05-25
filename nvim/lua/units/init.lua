@@ -50,7 +50,7 @@ M.read_file = function(file)
 	return vim.fn.readfile(file)
 end
 
-M.add_test_function = function(func_name)
+M.add_unit_test = function(func_name)
     local root_node = Query.get_root()
 	local function_node = M.get_closest_function()
 	if function_node == nil then
@@ -69,13 +69,14 @@ local function setup_keymaps()
 	vim.keymap.set("n", "<leader>ut", function()
 		local ft = vim.bo.filetype -- must be go
 		if not vim.tbl_contains(vim.tbl_keys(lookup), ft) then
-			error("not supported filetype " .. ft)
+            vim.notify("not supported filetype: " .. ft, 3)
+            return
 		end
 		vim.ui.input({ prompt = "Unit test function name: " }, function(name)
 			if name == nil then
 				return
 			end
-			M.add_test_function(name)
+			M.add_unit_test(name)
 		end)
 	end, {})
 end
