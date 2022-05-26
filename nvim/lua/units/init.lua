@@ -43,7 +43,7 @@ end
 --- returns name for a given function node.
 -- raises an error if the node is not a function node
 M.get_function_name = function(function_node, filetype)
-    return Query.get_name(function_node)
+	return Query.get_name(function_node)
 end
 
 M.read_file = function(file)
@@ -51,17 +51,18 @@ M.read_file = function(file)
 end
 
 M.add_unit_test = function(func_name)
-    local root_node = Query.get_root()
+	local root_node = Query.get_root()
 	local function_node = M.get_closest_function()
 	if function_node == nil then
 		error("node is not a function node; received nil")
 	end
+	if func_name == nil then
+		error("argument 'func_name' must be provided, but was nil")
+	end
 
-	-- local name = M.get_function_name(function_node)
-    local name = Query.get_name(function_node)
-	local _, _, rowend, _ = function_node:range()
-	local lines = lookup[vim.bo.filetype].template(func_name or ("test_" .. name), function_node, root_node)
-	vim.api.nvim_buf_set_lines(0, rowend + 1, rowend + 1, false, lines)
+	local template_fn = lookup[vim.bo.filetype].template
+	local lines, row = template_fn(func_name, function_node, root_node)
+	vim.api.nvim_buf_set_lines(0, row, row, false, lines)
 	Query.get_root(0, vim.bo.filetype) -- TODO: don't want to call this? update parser??
 end
 
@@ -69,8 +70,8 @@ local function setup_keymaps()
 	vim.keymap.set("n", "<leader>ut", function()
 		local ft = vim.bo.filetype -- must be go
 		if not vim.tbl_contains(vim.tbl_keys(lookup), ft) then
-            vim.notify("not supported filetype: " .. ft, 3)
-            return
+			vim.notify("not supported filetype: " .. ft, 3)
+			return
 		end
 		vim.ui.input({ prompt = "Unit test function name: " }, function(name)
 			if name == nil then

@@ -2,32 +2,51 @@ local Query = require("units.query")
 
 return {
 	template = function(func_name, node, root)
-
-        local captures = Query.exec_query([[
+		local startrow
+		local captures = Query.exec_query(
+			[[
         (mod_item
             name: (identifier) @name
             (#eq? @name "tests")
-        )
-        ]], root)
-        if table.len(captures) == 0 then
-            -- 
-        end
+        ) @mod
+        ]],
+			root
+		)
 
-        -- TODO: we want to insert at existing mod tests if it eixsts, otherwise create it
-        local lines = {}
+		local s
+		if #captures == 0 then
+			s = string.format(
+				[[
+mod tests {
+    #[test]
+    fn %s() {
+        // TODO: implement
+    }
+}
+]],
+				func_name
+			)
 
-		local testline = string.format("fn %s() {", func_name)
-		local function indent(s)
-			return "    " .. s
+			local _, _, rowend, _ = node:range()
+			startrow = rowend + 1
+		elseif #captures == 1 then
+			-- use this one
+			s = string.format(
+				[[
+    #[test]
+    fn %s() {
+        // TODO: implement
+    }
+]],
+				func_name
+			)
+			local mod = captures[1].mod
+			local _, _, rowend, _ = mod:range()
+            startrow = rowend 
+			print("found module with length 1")
 		end
-		return {
-			"mod tests {",
-			indent("#[test]"),
-			indent(testline),
-			indent("    // TODO"),
-			indent("}"),
-			"}",
-		}
+
+		return vim.split(s, "\n"), startrow
 	end,
 	node = "function_item",
 	query = [[

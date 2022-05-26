@@ -21,7 +21,9 @@ Query.pluck_query = function(node, query)
 			out[capture_name] = n
 		end
 	end
-	if nqueries ~= 1 then
+    if nqueries == 0 then
+        error("no query result found")
+    elseif nqueries > 1 then
 		error("expected a single query, but found " .. nqueries .. " queries.")
 	end
 	return out
