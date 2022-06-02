@@ -311,7 +311,7 @@ local on_attach = function(_, bufnr)
 		[[<cmd>lua require('telescope.builtin').lsp_document_symbols()<CR>]],
 		opts
 	)
-	vim.api.nvim_buf_set_keymap(bufnr, "n", "sw", [[<cmd>lua vim.lsp.buf.formatting()<CR>]], opts)
+	vim.api.nvim_buf_set_keymap(bufnr, "n", "sw", [[<cmd>lua vim.lsp.buf.format({async = true})<CR>]], opts)
 end
 
 -- nvim-cmp supports additional completion capabilities
