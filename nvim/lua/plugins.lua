@@ -43,6 +43,9 @@ map("n", "t<C-l>", ":TestLast<CR>", options)
 map("n", "t<C-g>", ":TestVisit<CR>", options)
 vim.keymap.set("n", "<leader>,", "<Plug>PlenaryTestFile", options)
 
+-- oscyank
+vim.keymap.set("v", "<leader>y", ":OSCYank<CR>", { noremap = true })
+
 -- orgmode
 require("orgmode").setup_ts_grammar()
 require("nvim-treesitter.configs").setup({
