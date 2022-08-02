@@ -4,9 +4,9 @@ local utils = require("utils")
 local Query = require("units.query")
 
 local function printfile()
-    print('---- file contents ----')
-    print(vim.fn.join(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n"))
-    print('----    end    ----')
+	print("---- file contents ----")
+	print(vim.fn.join(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n"))
+	print("----    end    ----")
 end
 
 describe("query function node", function()
@@ -53,39 +53,41 @@ describe("creates test node", function()
 		assert.truthy(test_fn_node, vim.api.nvim_buf_get_lines(0, 0, -1, false))
 		assert.same("test_add_numbers", units.get_function_name(test_fn_node))
 	end)
-
 end)
 
 describe("rust-specific", function()
-
 	it("appends unit test with rust filetype", function()
 		t.open_test_file("foo.rs")
 
 		units.add_unit_test("test_add_numbers")
-        local test_function_node = Query.exec_query_single_result([[
+		local test_function_node = Query.exec_query_single_result(
+			[[
         (function_item
           name: (identifier) @name
           (#eq? @name "test_add_numbers")
-        ) @fn]], nil).fn
-        assert.is_not.is_nil(test_function_node)
-        assert.equals("test_add_numbers", Query.get_name(test_function_node))
-
+        ) @fn]],
+			nil
+		).fn
+		assert.is_not.is_nil(test_function_node)
+		assert.equals("test_add_numbers", Query.get_name(test_function_node))
 	end)
 
-    it("uses existing tests module", function()
-        t.open_test_file("rust_with_existing_mod.rs")
-        units.add_unit_test("my_cool_test")
-        local function plines()
-            vim.api.nvim_buf_get_lines(0, 0, -1, false)
-        end
-        local test_function_node = Query.exec_query_single_result([[
+	it("uses existing tests module", function()
+		t.open_test_file("rust_with_existing_mod.rs")
+		units.add_unit_test("my_cool_test")
+		local function plines()
+			vim.api.nvim_buf_get_lines(0, 0, -1, false)
+		end
+		local test_function_node = Query.exec_query_single_result(
+			[[
         (function_item
           name: (identifier) @name
           (#eq? @name "my_cool_test")
-        ) @fn]], nil).fn
-        assert.equals("my_cool_test", Query.get_name(test_function_node))
-        local test_mod = Query.get_name(Query.first_ancestor(test_function_node, "mod_item"))
-        assert.equals("tests", test_mod, plines())
-    end)
-
+        ) @fn]],
+			nil
+		).fn
+		assert.equals("my_cool_test", Query.get_name(test_function_node))
+		local test_mod = Query.get_name(Query.first_ancestor(test_function_node, "mod_item"))
+		assert.equals("tests", test_mod, plines())
+	end)
 end)

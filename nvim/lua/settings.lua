@@ -32,6 +32,7 @@ o.undofile = true
 o.hidden = true
 o.updatetime = 250
 wo.signcolumn = "yes"
+o.splitright = true
 
 -- Set completeopt to have a better completion experience
 o.completeopt = "menuone,noselect"

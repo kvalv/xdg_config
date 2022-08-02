@@ -131,89 +131,85 @@ require("telescope").setup({
 })
 --Add leader shortcuts
 
--- vim.api.nvim_set_keymap(
--- 	"n",
--- 	"<leader><space>",
--- 	[[<cmd>lua require('telescope.builtin').buffers()<CR>]],
--- 	{ noremap = true, silent = true }
--- )
-
-vim.api.nvim_set_keymap(
-	"n",
-	"<leader>f",
-	[[<cmd>lua require('telescope.builtin').find_files({previewer = false})<CR>]],
-	{ noremap = true, silent = true }
-)
-vim.api.nvim_set_keymap(
-	"n",
-	"<leader>sb",
-	[[<cmd>lua require('telescope.builtin').current_buffer_fuzzy_find()<CR>]],
-	{ noremap = true, silent = true }
-)
-vim.api.nvim_set_keymap(
-	"n",
-	"<leader>sh",
-	[[<cmd>lua require('telescope.builtin').help_tags()<CR>]],
-	{ noremap = true, silent = true }
-)
-vim.api.nvim_set_keymap(
-	"n",
-	"<leader>sd",
-	[[<cmd>lua require('telescope.builtin').grep_string()<CR>]],
-	{ noremap = true, silent = true }
-)
+vim.keymap.set("n", "<leader>f", function()
+	require("telescope.builtin").find_files({ previewer = false })
+end, {
+	noremap = true,
+	silent = true,
+})
+vim.keymap.set("n", "<leader>sb", function()
+	require("telescope.builtin").current_buffer_fuzzy_find()
+end, {
+	noremap = true,
+	silent = true,
+})
+vim.keymap.set("n", "<leader>sh", function()
+	require("telescope.builtin").help_tags()
+end, {
+	noremap = true,
+	silent = true,
+})
+vim.keymap.set("n", "<leader>sd", function()
+	require("telescope.builtin").grep_string()
+end, {
+	noremap = true,
+	silent = true,
+})
 vim.keymap.set("n", "<leader>t", function()
-
-    -- vim.fn.tagfiles() gives a bunch of stupid names that start with term
-    -- if the current buffer is the terminal. Let's filter those out before
-    -- passing it into the picker
+	-- vim.fn.tagfiles() gives a bunch of stupid names that start with term
+	-- if the current buffer is the terminal. Let's filter those out before
+	-- passing it into the picker
 	local tagfiles = vim.tbl_filter(function(fname)
 		return not vim.startswith(fname, "term")
 	end, vim.fn.tagfiles())
 
-    if #tagfiles > 1 then
-        print("warning: found more than one tagfile. Using only first one. This might give unexpected results (lack of tags)")
-    elseif #tagfiles == 0 then
-        print("No tag files found")
-        return
-    end
-    local ctags_file = tagfiles[1]
+	if #tagfiles > 1 then
+		print(
+			"warning: found more than one tagfile. Using only first one. This might give unexpected results (lack of tags)"
+		)
+	elseif #tagfiles == 0 then
+		print("No tag files found")
+		return
+	end
+	local ctags_file = tagfiles[1]
 
 	require("telescope.builtin").tags({ ctags_file = ctags_file })
 end, {
 	noremap = true,
 	silent = true,
 })
-vim.api.nvim_set_keymap(
-	"n",
-	"<leader>sp",
-	[[<cmd>lua require('telescope.builtin').grep_string()<CR>]],
-	{ noremap = true, silent = true }
-)
-vim.api.nvim_set_keymap(
-	"n",
-	"<leader>so",
-	[[<cmd>lua require('telescope.builtin').tags{ only_current_buffer = true }<CR>]],
-	{ noremap = true, silent = true }
-)
-vim.api.nvim_set_keymap(
-	"n",
-	"<leader>?",
-	[[<cmd>lua require('telescope.builtin').oldfiles()<CR>]],
-	{ noremap = true, silent = true }
-)
-vim.api.nvim_set_keymap(
-	"n",
-	"<leader>sc",
-	[[<cmd>lua require('telescope_extensions').telescope_config_files()<CR>]],
-	{ noremap = true, silent = true }
-)
-vim.api.nvim_set_keymap(
-	"n",
-	"<leader>sl",
-	[[<cmd>lua require('telescope_extensions').packer_lua_files()<CR>]],
-	{ noremap = true, silent = true }
-)
+
+vim.keymap.set("n", "<leader>sp", function()
+	require("telescope.builtin").live_grep()
+end, {
+	noremap = true,
+	silent = true,
+})
+
+vim.keymap.set("n", "<leader>so", function()
+	require("telescope.builtin").tags({ only_current_buffer = true })
+end, {
+	noremap = true,
+	silent = true,
+})
+vim.keymap.set("n", "<leader>?", function()
+	require("telescope.builtin").oldfiles()
+end, {
+	noremap = true,
+	silent = true,
+})
+vim.keymap.set("n", "<leader>sc", function()
+	require("telescope_extensions").telescope_config_files()
+end, {
+	noremap = true,
+	silent = true,
+})
+vim.keymap.set("n", "<leader>sl", function()
+	require("telescope_extensions").packer_lua_files()
+end, {
+	noremap = true,
+	silent = true,
+})
 
 -- Treesitter configuration
 -- Parsers must be installed manually via :TSInstall
@@ -277,6 +273,19 @@ require("nvim-treesitter.configs").setup({
 		lint_events = { "BufWrite", "CursorHold" },
 	},
 })
+
+local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
+parser_config.sql = {
+	install_info = {
+		url = "/tmp/tree-sitter-sql", -- local path or git repo
+		files = { "src/parser.c" },
+		-- optional entries:
+		branch = "main", -- default branch in case of git repo if different from master
+		generate_requires_npm = false, -- if stand-alone parser without npm dependencies
+		requires_generate_from_grammar = false, -- if folder contains pre-generated src/parser.c
+	},
+	-- filetype = "sql", -- if filetype does not match the parser name
+}
 
 -- LSP settings
 local lspconfig = require("lspconfig")
@@ -378,11 +387,17 @@ lspconfig.sumneko_lua.setup({
 })
 
 lspconfig.rust_analyzer.setup({
-	cmd = { vim.env.HOME .. "/.local/share/nvim/lsp_servers/rust/rust-analyzer" },
+	-- cmd = { vim.env.HOME .. "/.local/share/nvim/lsp_servers/rust/rust-analyzer" },
 	on_attach = on_attach,
 	capabilities = capabilities,
 	settings = {
 		["rust-analyzer"] = {
+			-- https://users.rust-lang.org/t/how-to-disable-rust-analyzer-proc-macro-warnings-in-neovim/53150/6
+			diagnostics = {
+				enable = true,
+				disabled = { "unresolved-proc-macro" },
+				enableExperimental = true,
+			},
 			assist = {
 				importGranularity = "module",
 				importPrefix = "by_self",
@@ -397,6 +412,7 @@ lspconfig.rust_analyzer.setup({
 	},
 })
 
+lspconfig.tailwindcss.setup({})
 lspconfig.svelte.setup({
 	on_attach = on_attach,
 	capabilities = capabilities,
@@ -484,3 +500,5 @@ require("org_utils")
 require("snippets")
 
 require("units").init()
+
+require("scratch") -- some temporary stuff in here

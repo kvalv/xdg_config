@@ -42,7 +42,7 @@ mod tests {
 			)
 			local mod = captures[1].mod
 			local _, _, rowend, _ = mod:range()
-            startrow = rowend 
+			startrow = rowend
 			print("found module with length 1")
 		end
 

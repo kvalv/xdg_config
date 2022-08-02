@@ -119,4 +119,4 @@ local benthoslint = {
     }),
 }
 
-null_ls.register(benthoslint)
+-- null_ls.register(benthoslint)
