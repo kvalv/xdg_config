@@ -49,8 +49,46 @@ function M.read_file(file)
 	return Path:new("lua", "refactoring", "tests", file):read()
 end
 
-function M.vim_motion(motion)
-	vim.cmd(string.format(':exe "norm! %s\\<esc>"', motion))
+function M.vim_motion(motion, escape)
+    local s
+    if (escape == nil) or  (escape) then
+        s = string.format(':exe "norm! %s\\<esc>"', motion)
+    else
+        s = string.format(':exe "norm! %s"', motion)
+    end
+	vim.cmd(s)
+end
+
+--- sets mark `mark` at cursor position and returns a callback function to restore to the original mark
+-- this can be convenient when a scripts needs to store location of current position and go somewhere
+-- else
+--- @param mark string the mark
+M.borrow_mark = function(mark)
+    local m = vim.api.nvim_get_mark(mark, {})
+    vim.api.nvim_buf_set_mark(0, mark, vim.fn.line('.'), vim.fn.col('.'), {})
+    M.vim_motion('H')
+    local s = vim.api.nvim_get_mark('S', {})
+    vim.api.nvim_buf_set_mark(0, 'S', vim.fn.line('.'), vim.fn.col('.'), {})
+    local function restore()
+        print('restoring', m[1], m[2])
+        -- M.vim_motion('`' .. mark)
+        M.vim_motion(string.format('`Szt`%s', mark))
+
+        if s[1] == 0 then
+            -- mark was not set in first place...
+            vim.api.nvim_buf_del_mark(0, 'S')
+        else
+            vim.api.nvim_buf_set_mark(0, 'S', s[1], s[2], {})
+        end
+        if m[1] == 0 then
+            -- mark was not set in first place...
+            vim.api.nvim_buf_del_mark(0, mark)
+        else
+            vim.api.nvim_buf_set_mark(0, mark, m[1], m[2], {})
+        end
+
+    end
+    return restore
 end
 
 return M
