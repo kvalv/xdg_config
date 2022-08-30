@@ -48,7 +48,7 @@ end
 
 -- TODO: I want a telescope for finding lua files ;  -- is the root directory
 M.packer_lua_files = function()
-	require("telescope.builtin.files").find_files({
+	require("telescope.builtin").find_files({
 		search_dirs = { vim.env.HOME .. "/.local/share/nvim/site/pack/packer/start", "/usr/share/nvim/runtime/lua" },
 		entry_maker = function(e)
 			local display = path_relative_to(e, "start") or e
