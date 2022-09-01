@@ -160,9 +160,12 @@ vim.keymap.set("n", "<leader>t", function()
 	-- vim.fn.tagfiles() gives a bunch of stupid names that start with term
 	-- if the current buffer is the terminal. Let's filter those out before
 	-- passing it into the picker
+    local candidates = vim.fn.tagfiles()
+    table.insert(candidates, 1, string.format("%s/tags", vim.fn.getcwd()))
+
 	local tagfiles = vim.tbl_filter(function(fname)
 		return not vim.startswith(fname, "term")
-	end, vim.fn.tagfiles())
+	end, candidates)
 
 	if #tagfiles > 1 then
 		print(
@@ -174,7 +177,7 @@ vim.keymap.set("n", "<leader>t", function()
 	end
 	local ctags_file = tagfiles[1]
 
-	require("telescope.builtin").tags({ ctags_file = ctags_file })
+	require("telescope.builtin").tags({ ctags_file = ctags_file, only_sort_tags = true })
 end, {
 	noremap = true,
 	silent = true,
