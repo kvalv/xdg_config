@@ -1,4 +1,5 @@
 local map = vim.api.nvim_set_keymap
+local utils = require("utils")
 local options = { noremap = true }
 
 -- harpoon
@@ -26,12 +27,30 @@ vim.api.nvim_set_keymap("n", "g2", ':lua require("harpoon.term").sendCommand(1, 
 vim.api.nvim_set_keymap("n", "<F3>", ':lua require("harpoon.term").sendCommand(1, 3)  <CR>', { noremap = true })
 vim.api.nvim_set_keymap("n", "<F4>", ':lua require("harpoon.term").sendCommand(1, 4)  <CR>', { noremap = true })
 vim.api.nvim_set_keymap("n", "<F5>", ':lua require("harpoon.term").sendCommand(1, 5)  <CR>', { noremap = true })
-vim.api.nvim_set_keymap(
-	"n",
-	"<M-j>",
-	':lua require("harpoon.term").sendCommand(1, vim.api.nvim_get_current_line()) <CR>',
-	{ noremap = true }
-)
+HARPOON_TERM_ID = HARPOON_TERM_ID or 1  -- if already loaded, we'll keep it, otherwise set to 1 as default
+
+vim.keymap.set("n", "<M-j>", function()
+    local line = vim.api.nvim_get_current_line()
+    print(line)
+    -- local line = "hello world\n"
+    require("harpoon.term").sendCommand(HARPOON_TERM_ID, string.format("%s\n", line))
+end, { noremap = true })
+
+vim.keymap.set("n", "<M-k>", function()
+    utils.vim_motion("yip")
+    local lines = vim.split(vim.fn.getreg('"'), "\n")
+    for _, line in ipairs(lines) do
+        require("harpoon.term").sendCommand(HARPOON_TERM_ID, string.format("%s\n", line))
+    end
+end, { noremap = true })
+
+
+-- vim.api.nvim_set_keymap(
+-- 	"n",
+-- 	"<M-j>",
+-- 	':lua require("harpoon.term").sendCommand(1, vim.api.nvim_get_current_line()) <CR>',
+-- 	{ noremap = true }
+-- )
 
 vim.api.nvim_set_keymap("n", "<M-f>", ":Telescope git_files<CR>", { noremap = true })
 

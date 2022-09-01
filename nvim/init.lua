@@ -332,7 +332,7 @@ local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
 
 -- Enable the following language servers
-local servers = { "clangd", "rust_analyzer", "pyright", "tsserver", "gopls" }
+local servers = { "clangd", "rust_analyzer", "pyright", "tsserver", "gopls", "bashls" }
 for _, lsp in ipairs(servers) do
 	lspconfig[lsp].setup({
 		on_attach = on_attach,
@@ -416,7 +416,7 @@ lspconfig.rust_analyzer.setup({
 	},
 })
 
-lspconfig.tailwindcss.setup({})
+-- lspconfig.tailwindcss.setup({})
 lspconfig.svelte.setup({
 	on_attach = on_attach,
 	capabilities = capabilities,
@@ -505,4 +505,4 @@ require("snippets")
 
 require("units").init()
 
-require("scratch") -- some temporary stuff in here
+-- require("scratch") -- some temporary stuff in here
