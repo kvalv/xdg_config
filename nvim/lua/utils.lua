@@ -1,7 +1,7 @@
 local Path = require("plenary.path")
 
 local M = {}
-M.tuple = require("tuple")  -- re-export...
+M.tuple = require("tuple") -- re-export...
 
 M.reload = function(name)
 	require("plenary.reload").reload_module(name)
@@ -39,9 +39,8 @@ M.log = require("plenary.log").new({
 	level = "warn",
 })
 
-
 M.printf = function(s, ...)
-    return print(string.format(s, ...))
+	return print(string.format(s, ...))
 end
 
 -- stolen from https://github.com/ThePrimeagen/refactoring.nvim/blob/master/lua/refactoring/tests/utils.lua
@@ -50,12 +49,12 @@ function M.read_file(file)
 end
 
 function M.vim_motion(motion, escape)
-    local s
-    if (escape == nil) or  (escape) then
-        s = string.format(':exe "norm! %s\\<esc>"', motion)
-    else
-        s = string.format(':exe "norm! %s"', motion)
-    end
+	local s
+	if (escape == nil) or escape then
+		s = string.format(':exe "norm! %s\\<esc>"', motion)
+	else
+		s = string.format(':exe "norm! %s"', motion)
+	end
 	vim.cmd(s)
 end
 
@@ -64,31 +63,58 @@ end
 -- else
 --- @param mark string the mark
 M.borrow_mark = function(mark)
-    local m = vim.api.nvim_get_mark(mark, {})
-    vim.api.nvim_buf_set_mark(0, mark, vim.fn.line('.'), vim.fn.col('.'), {})
-    M.vim_motion('H')
-    local s = vim.api.nvim_get_mark('S', {})
-    vim.api.nvim_buf_set_mark(0, 'S', vim.fn.line('.'), vim.fn.col('.'), {})
-    local function restore()
-        print('restoring', m[1], m[2])
-        -- M.vim_motion('`' .. mark)
-        M.vim_motion(string.format('`Szt`%s', mark))
+	local m = vim.api.nvim_get_mark(mark, {})
+	vim.api.nvim_buf_set_mark(0, mark, vim.fn.line("."), vim.fn.col("."), {})
+	M.vim_motion("H")
+	local s = vim.api.nvim_get_mark("S", {})
+	vim.api.nvim_buf_set_mark(0, "S", vim.fn.line("."), vim.fn.col("."), {})
+	local function restore()
+		print("restoring", m[1], m[2])
+		-- M.vim_motion('`' .. mark)
+		M.vim_motion(string.format("`Szt`%s", mark))
 
-        if s[1] == 0 then
-            -- mark was not set in first place...
-            vim.api.nvim_buf_del_mark(0, 'S')
-        else
-            vim.api.nvim_buf_set_mark(0, 'S', s[1], s[2], {})
-        end
-        if m[1] == 0 then
-            -- mark was not set in first place...
-            vim.api.nvim_buf_del_mark(0, mark)
-        else
-            vim.api.nvim_buf_set_mark(0, mark, m[1], m[2], {})
-        end
+		if s[1] == 0 then
+			-- mark was not set in first place...
+			vim.api.nvim_buf_del_mark(0, "S")
+		else
+			vim.api.nvim_buf_set_mark(0, "S", s[1], s[2], {})
+		end
+		if m[1] == 0 then
+			-- mark was not set in first place...
+			vim.api.nvim_buf_del_mark(0, mark)
+		else
+			vim.api.nvim_buf_set_mark(0, mark, m[1], m[2], {})
+		end
+	end
 
-    end
-    return restore
+	return restore
+end
+
+M.reverse_highlight = function(node, timeout, namespace)
+	local usage_namespace = namespace or vim.api.nvim_create_namespace("foo-space")
+	local hlgroup = "luaTSComment"
+	vim.api.nvim_buf_clear_namespace(0, usage_namespace, 0, -1)
+	local r0, c0, r1, c1 = node:range()
+	vim.highlight.range(0, usage_namespace, hlgroup, { 0, 0 }, { r0, c0 })
+	vim.highlight.range(0, usage_namespace, hlgroup, { r1, c1 }, { vim.fn.line("$"), 1000 })
+
+	if timeout ~= nil then
+		vim.defer_fn(function()
+			vim.api.nvim_buf_clear_namespace(0, usage_namespace, 0, -1)
+		end, timeout)
+	end
+end
+
+
+local id = vim.api.nvim_create_augroup("MyGroup", { clear = false })
+M.do_frequent_writes = function()
+    local bufnr = vim.fn.bufnr("%")
+    print(bufnr)
+    vim.api.nvim_create_autocmd({"TextChanged", "InsertLeave"}, {buffer=bufnr, callback=function() require("utils").vim_motion(":w") end})
+end
+
+M.dont_frequent_writes = function()
+    vim.api.nvim_del_augroup_by_id(id)
 end
 
 return M
