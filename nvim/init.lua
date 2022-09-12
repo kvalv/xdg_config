@@ -496,13 +496,13 @@ end, {
 	nowait = true,
 })
 P = vim.pretty_print
-
 require("maps")
 require("settings")
 require("plugins")
 require("org_utils")
 require("snippets")
 
+U = require("utils")
 require("units").init()
 
 -- require("scratch") -- some temporary stuff in here
