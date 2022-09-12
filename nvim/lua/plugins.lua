@@ -138,4 +138,40 @@ local benthoslint = {
     }),
 }
 
--- null_ls.register(benthoslint)
+wt = require("git-worktree")
+wt.setup{
+    change_directory_command = "cd",
+    update_on_change = true,
+    update_on_change_command = "e .",
+    clearjumps_on_change = true,
+    autopush = false,
+}
+require("telescope").load_extension("git_worktree")
+
+vim.keymap.set("n", "gws", function() require("telescope").extensions.git_worktree.git_worktrees() end, { noremap = true })
+vim.keymap.set("n", "gwc", function() require("telescope").extensions.git_worktree.create_git_worktree() end, { noremap = true })
+
+
+local id = vim.api.nvim_create_augroup("tagpattern-group", { clear = true })
+vim.api.nvim_create_autocmd({"BufWritePost"}, {pattern=".tagpatterns", group=id, callback=function() 
+    local Job = require'plenary.job'
+    local lines = vim.fn.readfile(".tagpatterns")
+    Job:new({
+        command = "ctags",
+        -- args = require("utils").concat({"-R"}, lines),
+        args = {"-R"},
+        cwd = "/home/mikael/src/main.old",
+        -- on_stderr = function(e)
+        --     print(string.format("stderr %s",  e))
+        -- end,
+        -- on_stdout = function(e)
+        --     print(string.format("stdout %s",  e))
+        -- end,
+        on_exit = function(j ,return_val) 
+            P(j)
+            print(return_val)
+        end
+    }):start()
+
+
+end})

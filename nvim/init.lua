@@ -22,6 +22,7 @@ require("packer").startup(function()
 	use("tpope/vim-unimpaired") -- for [<space> and friends
 	use("tpope/vim-surround")
     use("lambdalisue/suda.vim")
+    use("ThePrimeagen/git-worktree.nvim")
 	use("ludovicchabant/vim-gutentags") -- Automatic tags management
 	-- UI to select things (files, grep results, open buffers...)
 	use({ "nvim-telescope/telescope.nvim", requires = { "nvim-lua/plenary.nvim" } })
@@ -332,7 +333,7 @@ local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
 
 -- Enable the following language servers
-local servers = { "clangd", "rust_analyzer", "pyright", "tsserver", "gopls", "bashls" }
+local servers = { "clangd", "rust_analyzer", "pyright", "tsserver", "gopls", "bashls", "yamlls" }
 for _, lsp in ipairs(servers) do
 	lspconfig[lsp].setup({
 		on_attach = on_attach,
