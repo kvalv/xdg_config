@@ -14,6 +14,7 @@ vim.cmd([[
 
 local use = require("packer").use
 require("packer").startup(function()
+    use("itchyny/vim-qfedit") -- quickfix
 	use("wbthomason/packer.nvim") -- Package manager
 	use("tpope/vim-fugitive") -- Git commands in nvim
 	use("tpope/vim-vinegar") -- netrw
