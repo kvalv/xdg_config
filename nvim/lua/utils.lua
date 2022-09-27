@@ -48,6 +48,16 @@ function M.read_file(file)
 	return Path:new("lua", "refactoring", "tests", file):read()
 end
 
+function M.concat(arr1, arr2)
+    local out = {}
+    for _, elem in ipairs(arr1) do
+        table.insert(out, elem)
+    end
+    for _, elem in ipairs(arr2) do
+        table.insert(out, elem)
+    end
+    return out
+end
 function M.vim_motion(motion, escape)
 	local s
 	if (escape == nil) or escape then
@@ -114,7 +124,17 @@ M.do_frequent_writes = function()
 end
 
 M.dont_frequent_writes = function()
-    vim.api.nvim_del_augroup_by_id(id)
+    vim.api.nvim_clear_autocmds({group=id})
+    -- vim.api.nvim_del_augroup_by_id(id)
+end
+
+local id2 =  vim.api.nvim_create_augroup("MyGroup", { clear = false })
+M.on_save = function(callback)
+    if callback then
+        vim.api.nvim_create_autocmd("BufWritePost", {buffer=vim.fn.bufnr("%"), callback=callback, group=id2})
+    else
+        vim.api.nvim_del_augroup_by_id(id)
+    end
 end
 
 return M

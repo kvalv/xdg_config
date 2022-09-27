@@ -25,6 +25,7 @@ require("packer").startup(function()
     use("lambdalisue/suda.vim")
     use("ThePrimeagen/git-worktree.nvim")
 	use("ludovicchabant/vim-gutentags") -- Automatic tags management
+    use("nvim-treesitter/nvim-treesitter-context") -- sticky context
 	-- UI to select things (files, grep results, open buffers...)
 	use({ "nvim-telescope/telescope.nvim", requires = { "nvim-lua/plenary.nvim" } })
 	use("joshdick/onedark.vim") -- Theme inspired by Atom
@@ -507,4 +508,5 @@ require("snippets")
 U = require("utils")
 require("units").init()
 
--- require("scratch") -- some temporary stuff in here
+vim.opt.grepprg = "rg --vimgrep --no-heading --smart-case"
+vim.keymap.set("n", "<leader>g", ":silent grep<Space>")

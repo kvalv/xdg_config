@@ -7,6 +7,7 @@ require("harpoon").setup({
 	menu = {
 		width = 85,
 	},
+    enter_on_sendcmd = true,
 })
 
 vim.api.nvim_set_keymap("n", "<leader>hm", ':lua require("harpoon.mark").add_file()<CR>', { noremap = true })
@@ -175,3 +176,15 @@ vim.api.nvim_create_autocmd({"BufWritePost"}, {pattern=".tagpatterns", group=id,
 
 
 end})
+
+
+vim.keymap.set({"v", "x"}, "Y", function() 
+    vim.cmd("'<,'>w!/tmp/aaa")
+    vim.cmd("silent !xclip -sel c /tmp/aaa")
+end)
+vim.keymap.set("n", "Y", function()
+    local line = vim.api.nvim_get_current_line()
+    vim.cmd(".w!/tmp/aaa")
+    vim.cmd("silent !xclip -sel c /tmp/aaa")
+    print("copied to clipboard")
+end)
