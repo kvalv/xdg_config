@@ -29,10 +29,10 @@ alert = #bd2c40
 
 [bar/example]
 ;monitor = ${env:MONITOR:HDMI-1}
-monitor = DP-1-3
-monitor-fallback = eDP-1-1
+monitor = HDMI-1
+monitor-fallback = HDMI-1
 width = 100%
-height = 48
+height = 32
 bottom = true
 ;offset-x = 1%
 ;offset-y = 1%
@@ -59,7 +59,7 @@ font-1 = unifont:fontformat=truetype:size=8:antialias=false;0
 font-2 = siji:pixelsize=18;1
 
 modules-left = i3
-modules-center = date xkeyboard system-bluetooth-bluetoothctl
+modules-center = date xkeyboard
 modules-right = pulseaudio wlan battery temperature
 
 cursor-click = pointer
