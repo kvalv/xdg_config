@@ -1,0 +1,7 @@
+bluetuith 0.1.2-1
+bluez-utils-compat 5.65-1
+google-chrome 104.0.5112.101-1
+launcher-kolide-k2 0.12.1-1
+protoc-gen-go 1.28.0-1
+protoc-gen-go-grpc 1:1.2.0-1
+xrectsel 0.3.2-1
