@@ -1,4 +1,6 @@
 local pickers = require("telescope.pickers")
+local previewers = require "telescope.previewers"
+local make_entry = require "telescope.make_entry"
 local finders = require("telescope.finders")
 local conf = require("telescope.config").values
 -- local actions = require("telescope.actions")
@@ -60,4 +62,78 @@ M.packer_lua_files = function()
 		end,
 	})
 end
+
+M.special_files = function(opts)
+	opts = opts or {}
+	opts.cwd = "/home/mikael/src/main.git/elastic-fields"
+
+    local patterns = {
+        services = {
+            pat =  "./**/service/models.go",
+        },
+        django = {
+            pat = './**/models.py',
+            -- display = function(e) return vim.fn.fnamemodify(e, ":h:t") end,
+        }
+    }
+
+    local entry = patterns.django
+
+    -- opts.bufnr = vim.fn.bufnr('%')
+    -- opts.entry_maker = make_entry.gen_from_ctags(opts)
+	opts.entry_maker = function(e)
+        local j = vim.fn.json_decode(e)
+        if (j._type == "ptag") then
+            return nil
+        end
+        -- P(j)
+		return {
+            display = string.format("%-50s %s", j.name, j.path),
+			value = e,
+			ordinal = j.name,
+            lnum = j.line,
+            path = j.path,
+            scode = j.pattern,
+		}
+
+	end
+
+    local command_list = vim.split("cat mytags", " ")
+	pickers.new(opts, {
+		prompt_title = "service files",
+		finder = finders.new_oneshot_job(command_list, opts),
+        previewer = require('telescope.config').values.grep_previewer({}),
+		-- previewer = conf.file_previewer(opts),
+		sorter = conf.generic_sorter(opts),
+	}):find()
+end
+
+-- TODO: I want a telescope for finding lua files ;  -- is the root directory
+M.py3rdpartyfiles = function()
+	require("telescope.builtin").find_files({
+        find_command = vim.split("rg --smart-case --files --color never ", " "),
+		search_dirs = { vim.env.VIRTUAL_ENV },
+		entry_maker = function(e)
+			local display = path_relative_to(e, vim.env.VIRTUAL_ENV) or e
+			display = e
+			return {
+				display = display,
+				value = e,
+				ordinal = e,
+			}
+		end,
+	})
+end
+
+vim.keymap.set("n", "<space>P", function()
+    M.py3rdpartyfiles()
+end)
+
+
+vim.keymap.set("n", "zl", function() 
+    require("utils").vim_motion(":write")
+    require("utils").reload("telescope_extensions")
+    M.special_files()
+end)
+
 return M

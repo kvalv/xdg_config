@@ -179,8 +179,11 @@ end})
 
 
 vim.keymap.set({"v", "x"}, "Y", function() 
+    require("utils").vim_motion("")
     vim.cmd("'<,'>w!/tmp/aaa")
     vim.cmd("silent !xclip -sel c /tmp/aaa")
+    require("utils").vim_motion("gv")
+    print("copied to clipboard")
 end)
 vim.keymap.set("n", "Y", function()
     local line = vim.api.nvim_get_current_line()
