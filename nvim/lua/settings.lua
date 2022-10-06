@@ -34,6 +34,8 @@ o.updatetime = 250
 wo.signcolumn = "yes"
 o.splitright = true
 
+o.grepprg="rg --vimgrep --no-heading --smart-case"
+
 -- Set completeopt to have a better completion experience
 o.completeopt = "menuone,noselect"
 
