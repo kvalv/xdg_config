@@ -90,9 +90,10 @@ vim.g.gutentags_file_list_command = "git ls-files"
 
 -- test-vim vim-test
 vim.cmd("let test#python#pytest#file_pattern='\\v([^/]+)\\.py$'")
-vim.cmd("let test#python#pytest#executable = 'RVS_CONFIG=TEST pytest'")
+vim.cmd("let test#python#pytest#executable = 'docker-compose exec ignite-api ./manage.py test'")
+vim.cmd("let test#filename_modifier = ':s|api/ignite-api/||'")
 vim.cmd("let test#strategy = 'harpoon'")
-vim.cmd("let test#python#pytest#options = '-s --disable-warnings -vv '")
+vim.cmd("let test#python#pytest#options = '-- -s '")
 
 -- lightbulb
 vim.cmd([[autocmd CursorHold,CursorHoldI * lua require'nvim-lightbulb'.update_lightbulb()]])

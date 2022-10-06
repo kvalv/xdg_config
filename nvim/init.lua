@@ -359,7 +359,7 @@ table.insert(runtime_path, "/tmp/nvim/?.lua")
 table.insert(runtime_path, "/tmp/nvim/lua/?.lua")
 
 lspconfig.pyright.setup({
-	cmd = { vim.env.HOME .. "/.local/share/nvim/lsp_servers/python/node_modules/.bin/pyright-langserver", "--stdio" },
+	-- cmd = { vim.env.HOME .. "/.local/share/nvim/lsp_servers/python/node_modules/.bin/pyright-langserver", "--stdio" },
 	on_attach = on_attach,
 	capabilities = capabilities,
 })
