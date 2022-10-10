@@ -3,6 +3,9 @@ nvim/colors
 .netrwhist
 nvim/plugin
 
+# systemd dependencies
+*.target.wants
+
 .mono
 GIMP
 NuGet
