@@ -1,0 +1,13 @@
+[Unit]
+Description=Reverse SSH connection
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ssh -v -N -T -i /home/mikael/.ssh/id_rsa.pub -o "ServerAliveInterval 10" -o "ExitOnForwardFailure yes" -R22222:localhost:44444 vm
+Environment=SSH_AUTH_SOCK=%t/ssh-agent.socket
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=default.target
