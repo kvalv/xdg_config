@@ -4,11 +4,12 @@ local options = { noremap = true }
 
 -- harpoon
 require("harpoon").setup({
-	menu = {
-		width = 85,
-	},
     enter_on_sendcmd = true,
 })
+
+vim.keymap.set("n", "<F1>", function() require("harpoon.term").sendCommand(1, 1) end, {nowait=true})
+vim.keymap.set("n", "<F2>", function() require("harpoon.term").sendCommand(1, 2) end, {nowait=true})
+vim.keymap.set("n", "<F3>", function() require("harpoon.term").sendCommand(1, 3) end, {nowait=true})
 
 vim.api.nvim_set_keymap("n", "<leader>hm", ':lua require("harpoon.mark").add_file()<CR>', { noremap = true })
 vim.api.nvim_set_keymap("n", "<leader>ha", ':lua require("harpoon.ui").toggle_quick_menu()<CR>', { noremap = true })
@@ -182,13 +183,16 @@ end})
 vim.keymap.set({"v", "x"}, "Y", function() 
     require("utils").vim_motion("")
     vim.cmd("'<,'>w!/tmp/aaa")
-    vim.cmd("silent !xclip -sel c /tmp/aaa")
+    vim.cmd("silent !xclip -sel c -display :0 /tmp/aaa")
     require("utils").vim_motion("gv")
     print("copied to clipboard")
 end)
 vim.keymap.set("n", "Y", function()
     local line = vim.api.nvim_get_current_line()
     vim.cmd(".w!/tmp/aaa")
-    vim.cmd("silent !xclip -sel c /tmp/aaa")
-    print("copied to clipboard")
+    vim.cmd("silent !xclip -sel c -display :0 /tmp/aaa")
+    -- lua P({vim.fn.getpos("'>")[1], vim.fn.getpos("'>")[2]})
+    -- lua P({vim.fn.getpos("'<")[2], vim.fn.getpos("'<")[3]}, {vim.fn.getpos("'>")[2], vim.fn.getpos("'>")[3]})
+    -- vim.region
+    -- lua P(vim.region(0, {195,0 }, {196, 0}), "V", true)
 end)
