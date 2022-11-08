@@ -303,15 +303,6 @@ local on_attach = function(_, bufnr)
 	vim.api.nvim_buf_set_keymap(bufnr, "n", "K", "<cmd>lua vim.lsp.buf.hover()<CR>", opts)
 	vim.api.nvim_buf_set_keymap(bufnr, "n", "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", opts)
 	vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader-k>", "<cmd>lua vim.lsp.buf.signature_help()<CR>", opts)
-	vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>wa", "<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>", opts)
-	vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>wr", "<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>", opts)
-	vim.api.nvim_buf_set_keymap(
-		bufnr,
-		"n",
-		"<leader>wl",
-		"<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>",
-		opts
-	)
 	vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>D", "<cmd>lua vim.lsp.buf.type_definition()<CR>", opts)
 	vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", opts)
 	vim.api.nvim_buf_set_keymap(bufnr, "n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>", opts)
@@ -319,7 +310,6 @@ local on_attach = function(_, bufnr)
 	vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>e", "<cmd>lua vim.diagnostic.open_float()<CR>", opts)
 	vim.api.nvim_buf_set_keymap(bufnr, "n", "[d", "<cmd>lua vim.diagnostic.goto_prev()<CR>", opts)
 	vim.api.nvim_buf_set_keymap(bufnr, "n", "]d", "<cmd>lua vim.diagnostic.goto_next()<CR>", opts)
-	vim.api.nvim_buf_set_keymap(bufnr, "n", "<leader>q", "<cmd>lua vim.diagnostic.setloclist()<CR>", opts)
 	vim.api.nvim_buf_set_keymap(
 		bufnr,
 		"n",
@@ -335,7 +325,7 @@ local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
 
 -- Enable the following language servers
-local servers = { "clangd", "rust_analyzer", "pyright", "tsserver", "gopls", "bashls", "yamlls" }
+local servers = { "clangd", "rust_analyzer", "pyright", "tsserver", "gopls", "bashls", "yamlls", "jsonls" }
 for _, lsp in ipairs(servers) do
 	lspconfig[lsp].setup({
 		on_attach = on_attach,
@@ -504,9 +494,35 @@ require("settings")
 require("plugins")
 require("org_utils")
 require("snippets")
+require("telescope_extensions")
 
 U = require("utils")
 require("units").init()
 
 vim.opt.grepprg = "rg --vimgrep --no-heading --smart-case"
 vim.keymap.set("n", "<leader>g", ":silent grep<Space>")
+
+vim.keymap.set("n", "<leader>F", function()
+    require("telescope.builtin").find_files {cwd=vim.env.service}
+end)
+
+vim.keymap.set("n", "<leader>r", function()
+    require("telescope.builtin").tags {ctags_file=vim.env.service .. '/tags'}
+end, {nowait=true})
+
+
+
+
+vim.keymap.set("n", "gW", function()
+    require("telescope.builtin").find_files {cwd=vim.env.service}
+end)
+
+
+vim.keymap.set("n", "<Up>", "<C-u>", {nowait=true})
+vim.keymap.set("n", "<Down>", "<C-d>", {nowait=true})
+vim.keymap.set("n", "<Right>", "<C-d>", {nowait=true})
+
+vim.keymap.set("n", "<leader>w", function()
+    require("utils").vim_motion(":write")
+end, {nowait=true})
+
