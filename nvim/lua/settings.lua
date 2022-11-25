@@ -39,6 +39,5 @@ o.grepprg="rg --vimgrep --no-heading --smart-case"
 -- Set completeopt to have a better completion experience
 o.completeopt = "menuone,noselect"
 
--- vim.cmd [[
---   autocmd FileType lua set shiftwidth=2 tabstop=2
--- ]]
+-- altfile will not be netrw buffer but the previously modified file
+vim.g.netrw_altfile = 1
