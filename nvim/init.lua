@@ -65,6 +65,7 @@ require("packer").startup(function()
 		end,
 	})
 	use("nanotee/sqls.nvim")
+    use("nvim-telescope/telescope-live-grep-args.nvim")
 end)
 
 --Set colorscheme (order is important here)
@@ -123,7 +124,21 @@ require("gitsigns").setup({
 })
 
 -- Telescope
+-- require("telescope").load_extension("live_grep_args")
+local lga_actions = require("telescope-live-grep-args.actions")
+
 require("telescope").setup({
+    extensions = {
+        live_grep_args = {
+            auto_quoting = false,
+            mappings = { -- extend mappings
+        i = {
+          ["<C-k>"] = lga_actions.quote_prompt(),
+          ["<C-i>"] = lga_actions.quote_prompt({ postfix = " --iglob " }),
+        },
+        },
+        },
+    },
 	defaults = {
 		mappings = {
 			i = {
@@ -133,6 +148,7 @@ require("telescope").setup({
 		},
 	},
 })
+-- vim.keymap.set("
 --Add leader shortcuts
 
 vim.keymap.set("n", "<leader>f", function()
@@ -187,7 +203,9 @@ end, {
 })
 
 vim.keymap.set("n", "<leader>sp", function()
-	require("telescope.builtin").live_grep()
+
+    require("telescope").extensions.live_grep_args.live_grep_args()
+	-- require("telescope.builtin").live_grep()
 end, {
 	noremap = true,
 	silent = true,
@@ -322,7 +340,7 @@ end
 
 -- nvim-cmp supports additional completion capabilities
 local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
+capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
 
 -- Enable the following language servers
 local servers = { "clangd", "rust_analyzer", "pyright", "tsserver", "gopls", "bashls", "yamlls", "jsonls" }
@@ -454,16 +472,17 @@ cmp.setup({
 	},
 })
 
-require("null-ls").setup({
-	sources = {
-		require("null-ls").builtins.formatting.stylua,
+-- require("null-ls").setup({
+-- 	sources = {
+-- 		require("null-ls").builtins.formatting.stylua,
 
-		require("null-ls").builtins.formatting.black.with({
-			command = "black",
-			args = { "--quiet", "--fast", "--preview", "-" },
-		}),
-	},
-})
+--         require("null-ls").builtins.code_actions.gitsigns,
+-- 		require("null-ls").builtins.formatting.black.with({
+-- 			command = "black",
+-- 			args = { "--quiet", "--fast", "--preview", "-" },
+-- 		}),
+-- 	},
+-- })
 
 vim.keymap.set("n", "<leader>R", function()
 	-- special case; do we reload the vimrc lua file?
