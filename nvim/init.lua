@@ -471,6 +471,16 @@ cmp.setup({
 		{ name = "orgmode" },
 	},
 })
+vim.keymap.set({ "i", "s" }, "<C-l>", function()
+  if luasnip.choice_active() then
+    luasnip.change_choice(1)
+  end
+end)
+vim.keymap.set({ "i", "s" }, "<C-h>", function()
+  if luasnip.choice_active() then
+ luasnip.change_choice(-1)
+ end
+end)
 
 require("null-ls").setup({
 	sources = {
