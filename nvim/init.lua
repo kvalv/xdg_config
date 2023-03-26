@@ -472,17 +472,17 @@ cmp.setup({
 	},
 })
 
--- require("null-ls").setup({
--- 	sources = {
--- 		require("null-ls").builtins.formatting.stylua,
+require("null-ls").setup({
+	sources = {
+		require("null-ls").builtins.formatting.stylua,
 
---         require("null-ls").builtins.code_actions.gitsigns,
--- 		require("null-ls").builtins.formatting.black.with({
--- 			command = "black",
--- 			args = { "--quiet", "--fast", "--preview", "-" },
--- 		}),
--- 	},
--- })
+        -- require("null-ls").builtins.code_actions.gitsigns,
+		-- require("null-ls").builtins.formatting.black.with({
+		-- 	command = "black",
+		-- 	args = { "--quiet", "--fast", "--preview", "-" },
+		-- }),
+	},
+})
 
 vim.keymap.set("n", "<leader>R", function()
 	-- special case; do we reload the vimrc lua file?
