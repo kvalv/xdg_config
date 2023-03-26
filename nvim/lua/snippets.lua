@@ -247,8 +247,8 @@ local function mymain()
 		local v = nil
 		if gotype == "error" then
 			v = c(1, {
-				t(default),
 				fmt([[fmt.Errorf("{}: %w", err)]], i(1, "something bad happened")),
+				t(default),
 			})
 		else
 			v = t(default)
