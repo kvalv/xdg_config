@@ -1,4 +1,5 @@
 local ls = require("luasnip")
+local ts_utils = require("nvim-treesitter.ts_utils")
 -- some shorthands...
 local s = ls.snippet
 local sn = ls.snippet_node
@@ -179,290 +180,183 @@ local function node_describe(text)
 	return { node_ext_opts = { active = { virt_text = { { text, "Comment" } } } } }
 end
 
-fmt_add(
-	"lua",
-	"fori",
-	{},
-	{ i(1, "i"), i(2, "lower", node_describe("inclusive")), i(3, "upper", node_describe("inclusive")), i(4, "body...") },
-	[[
-for {}={},{} do
-    {}
+-- dlete from here
+
+-- scans upwards until it finds a node of specific type
+local function get_node(type)
+	local node = ts_utils.get_node_at_cursor()
+	if node == nil then
+		error("node not found", 2)
+		return
+	end
+	while node ~= nil do
+		if node:type() == type then
+			return node
+		end
+		node = node:parent()
+	end
 end
-]]
-)
 
-fmt_add(
-	"sql",
-	"fn",
-	{ callbacks = { [2] = {
-		[events.leave] = function(node)
-			print("2!!!")
-		end,
-	} } },
-	{
-		c(1, { t("FUNCTION"), t("OR REPLACE FUNCTION") }),
-		i(2, "fn_name", node_describe("remember () at end, e.g. 'myfunction()'")),
-		c(3, { t("void"), t("TRIGGER"), t("record"), i(nil, "return_type") }),
-		i(4, "--body..."),
-		-- i(3, "Surname"),
-		-- name = i(1, "name"),
-	},
-	[[
-CREATE {1} {2} RETURNS {3}
-LANGUAGE plpgsql
-AS $$
-DECLARE
-BEGIN
-    {4}
-END;
-$$;
-]]
-)
-fmt_add(
-	"sql",
-	{ trig = "trigger", dscr = "create a new trigger" },
-	{},
-	{
-		i(1, "name"),
-		c(2, { t("BEFORE"), t("AFTER"), t("INSTEAD OF") }),
-		c(3, { t("INSERT"), t("UPDATE"), t("DELETE"), t("TRUNACTE") }),
-		i(4, "table_name"),
-		c(5, { t("FOR EACH ROW"), t("FOR EACH STATEMENT"), t("") }),
-		i(6, "function_name"),
-		i(7, "arguments"),
-	},
-	[[
-CREATE OR REPLACE TRIGGER {1} {2} {3} ON {4}
-{5}
-EXECUTE FUNCTION {6}({7})
-]]
-)
+-- return a table of strings; the return types, e.g. {"*int", "error"}
+local function getReturnTypes(functionNode)
+	if functionNode == nil then
+		return nil
+	end
+	local resultNode = ts_utils.get_named_children(functionNode)[3]
+	-- if strats with * --then it's a pointer
+	-- if it's an error, then return the error
+	local returnTypes = {}
+	for c, _ in resultNode:iter_children() do
+		-- (parameter_list (type))
+		local type = ts_utils.get_named_children(c)[1]
+		local text = ts_utils.get_node_text(type)
+		if #text > 0 then
+			table.insert(returnTypes, text[1])
+		end
+	end
+	return returnTypes
+	-- print(vim.inspect(ts_utils.get_node_text(resultNode)))
+end
 
-fmt_add(
-	"sql",
-	"if",
-	{},
+-- returns the default type for various go types
+local function typeToDefault(name)
+	if vim.startswith(name, "*") then
+		return "nil"
+	end
+	if name == "int" then
+		return "0"
+	end
+	if name == "string" then
+		return [[""]]
+	end
+	if name == "error" then
+		return "err" -- here we would return a certain node
+	end
+end
 
-	{
-		i(1, "condition..."),
-		i(2, "body.."),
-	},
-	[[
-IF {1} THEN
-    {2}
-END IF;
-]]
-)
+local function mymain()
+	local node = get_node("function_declaration")
+	if node == nil then
+		vim.notify("did not find node", 3)
+		return
+	end
+	local returnTypes = getReturnTypes(node)
+	local nodes = {}
+	for index, gotype in ipairs(returnTypes) do
+		local default = typeToDefault(gotype)
+		local v = nil
+		if gotype == "error" then
+			v = c(1, {
+				t(default),
+				fmt([[fmt.Errorf("{}: %w", err)]], i(1, "something bad happened")),
+			})
+		else
+			v = t(default)
+		end
+		table.insert(nodes, v)
+		-- are we at the last argument? if not, add separator
+		if index < #returnTypes then
+			table.insert(nodes, t(", "))
+		end
+	end
+	return nodes
+	-- return table.concat(vim.tbl_map(typeToDefault, names), ", ")
+end
 
-fmt_add(
-	"sql",
-	"fk",
-	{},
-	{
-		i(1, "type_name", node_describe("e.g. order_id integer")),
-		i(2, "foreign_table"),
-		i(3, "id"),
-	},
-	[[
-{} REFERENCES {} ({})
-]]
-)
-
-fmt_add(
-	"sql",
-	"ctable",
-	{},
-	{
-		i(1, "table_name"),
-	},
-	[[
-CREATE TABLE {} (
-
-);
-    ]]
-)
-
-fmt_add(
-	"sql",
-	"insert",
-	{},
-	{
-		i(1, "table_name"),
-		i(2, "params"),
-		-- i(3, "todo"),
-		d(3, node_split(","), { 2 }),
-	},
-	[[
-INSERT INTO {} ({})
-VALUES ({});
-]]
-)
-
-fmt_add(
-	"sql",
-	"update",
-	{},
-	{
-		i(1, "table_name"),
-		i(2, "", node_describe("column_name = expression [...]")),
-		c(3, { { t("WHERE "), i(1, "condition") }, t("") }),
-	},
-	[[
-UPDATE {} SET {}
-{}
-]]
-)
-
-fmt_add(
-	"sql",
-	"foo",
-	{},
-	{
-		i(1, "x"),
-		d(2, node_split(","), { 1 }),
-	},
-	[[
-text: {}
-copy: {}
-    ]]
-)
-
-fmt_add(
-	"sql",
-	{ trig = "pr", dscr = "print a notification / error" },
-	{},
-	{ c(1, { t("INFO"), t("DEBUG"), t("LOG"), t("NOTICE"), t("WARNING"), t("EXCEPTION") }), i(2, "text...") },
-	"RAISE {1} '{2}';"
-)
-
-fmt_add(
-	"sql",
-	{ trig = "enable rls", dscr = "enable row level security for table" },
-	{},
-	{ i(1, "table_name") },
-	"ALTER TABLE {} ENABLE ROW LEVEL SECURITY;"
-)
-
-fmt_add(
-	"sql",
-	{ trig = "create policy" },
-	{},
-
-	{
-		i(1, "description", node_describe("prefer to use a sentence here, not a single word")),
-		i(2, "table_name"),
-		c(3, { t("ALL"), t("SELECT"), t("INSERT"), t("UPDATE"), t("DELETE") }),
-		c(4, { t("PUBLIC"), i(nil, "role_name", node_describe("e.g. 'admin'")) }),
-		i(5, "using_expression", node_describe("use WITH CHECK (...) if INSERT/UPDATE")),
-	},
-	[[
-CREATE POLICY {} ON {}
-FOR {}
-TO {}
-USING ({})
-]]
-)
-
-fmt_add("sql", { trig = "cc", dscr = "add column constraint" }, {}, {
-	c(1, {
-		t("NOT NULL"),
-		sn(nil, { t("CHECK ("), i(1, "expr"), t(")") }),
-		sn(nil, { t("REFERENCES "), i(1, "reftable"), c(2, { fmt("({})", i(1, "ids")), t("") }) }),
-	}),
-}, "{}")
-
-fmt_add(
-	"typescript",
-	{ trig = "fn_get", dscr = "makes a get endpoint" },
-	{},
-	{
-		f(function()
-			return vim.fn.expand("%:t:r") -- # /foo/id/[aa].ts -> [aa]
-			-- return vim.fn.expand("%")
-		end, {}),
-		i(0),
-	},
-	[[
-/** @type {{import('./__types/{}').RequestHandler}} */
-export async function get() {{
-  return {{
-    status: 200,
-    body: {{
-      {}
-    }}
-  }};
-}}
-]]
-)
-
-fmt_add("svelte", { trig = "input" }, {}, {
-	i(1),
-}, '<input type="{}"/>')
-
-fmt_add(
-	"svelte",
-	{ trig = "finput" },
-	{},
-	{
-		i(1),
-		i(2),
-		i(3),
-	},
-	[[
-<form>
-    {}
-    <input type="{}" {}/>
-</form>
-]]
-)
-
-fmt_add("svelte", { trig = "bind" }, {}, {
-	i(1),
-	i(2),
-}, "bind:{}={{{}}}")
-
-fmt_add("svelte", { trig = "class" }, {}, {
-	i(1),
-}, 'class="{}"')
-
-ls.add_snippets("svelte", {
-	s("<@", fmt("<{}>", { i(1, "") }), {
-		condition = function()
-			local node = sv.first_xml_element_after_cursor()
-			local r0, c0, r1, c1 = node:range()
-			vim.api.nvim_buf_set_mark(0, "a", r0 + 1, c0, {})
-			vim.api.nvim_buf_set_mark(0, "b", r1 + 1, c1, {})
-			-- sv.describe(node)
-
-			return true
-		end,
-		callbacks = {
-			[1] = {
-				[events.leave] = function(x)
-					local tagname = string.match(x:get_text()[1], "(%a+)%s*%a*")
-					utils.vim_motion("`a>`b")
-					local row1 = vim.api.nvim_buf_get_mark(0, "b")[1]
-					local text = string.format(
-						"%s%s",
-						string.rep(" ", vim.fn.indent(row1)),
-						string.format("</%s>", tagname)
-					)
-
-					vim.api.nvim_buf_set_lines(0, row1, row1, false, { text })
-					utils.vim_motion("g;<<")
-				end,
+ls.add_snippets("go", {
+	s(
+		"ife",
+		fmt(
+			[[if err != nil {
+    return <retvals>
+}
+]],
+			{
+				retvals = d(1, function()
+					return sn(nil, mymain())
+				end),
 			},
-		},
-	}),
-}, {
-	type = "autosnippets",
+			{
+				delimiters = "<>",
+			}
+		)
+	),
 })
 
-fmt_add("svelte", { trig = "<!" }, { type = "autosnippets" }, {
-	f(function()
-		local text = vim.fn.getreg(".")
-		text, _ = string.gsub(text, "[<>]", "")
+vim.keymap.set({ "n" }, "<leader>x", function()
+	mymain()
+end, {
+	silent = true,
+})
 
-		return text
-	end, {}, {}),
-}, "</{}>")
+ls.add_snippets("all", {
+	s(
+		"curtime",
+		f(function()
+			return os.date("%D - %H:%M")
+		end)
+	),
+})
+
+-- fmt_add("svelte", { trig = "input" }, {}, {
+-- 	i(1),
+-- }, '<input type="{}"/>')
+
+-- fmt_add(
+-- 	"svelte",
+-- 	{ trig = "finput" },
+-- 	{},
+-- 	{
+-- 		i(1),
+-- 		i(2),
+-- 		i(3),
+-- 	},
+-- 	[[
+-- <form>
+--     {}
+--     <input type="{}" {}/>
+-- </form>
+-- ]]
+-- )
+
+-- ls.add_snippets("svelte", {
+-- 	s("<@", fmt("<{}>", { i(1, "") }), {
+-- 		condition = function()
+-- 			local node = sv.first_xml_element_after_cursor()
+-- 			local r0, c0, r1, c1 = node:range()
+-- 			vim.api.nvim_buf_set_mark(0, "a", r0 + 1, c0, {})
+-- 			vim.api.nvim_buf_set_mark(0, "b", r1 + 1, c1, {})
+-- 			-- sv.describe(node)
+
+-- 			return true
+-- 		end,
+-- 		callbacks = {
+-- 			[1] = {
+-- 				[events.leave] = function(x)
+-- 					local tagname = string.match(x:get_text()[1], "(%a+)%s*%a*")
+-- 					utils.vim_motion("`a>`b")
+-- 					local row1 = vim.api.nvim_buf_get_mark(0, "b")[1]
+-- 					local text = string.format(
+-- 						"%s%s",
+-- 						string.rep(" ", vim.fn.indent(row1)),
+-- 						string.format("</%s>", tagname)
+-- 					)
+
+-- 					vim.api.nvim_buf_set_lines(0, row1, row1, false, { text })
+-- 					utils.vim_motion("g;<<")
+-- 				end,
+-- 			},
+-- 		},
+-- 	}),
+-- }, {
+-- 	type = "autosnippets",
+-- })
+
+-- fmt_add("svelte", { trig = "<!" }, { type = "autosnippets" }, {
+-- 	f(function()
+-- 		local text = vim.fn.getreg(".")
+-- 		text, _ = string.gsub(text, "[<>]", "")
+
+-- 		return text
+-- 	end, {}, {}),
+-- }, "</{}>")
