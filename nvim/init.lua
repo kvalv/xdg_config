@@ -64,7 +64,6 @@ require("packer").startup(function()
 			})
 		end,
 	})
-	use("nanotee/sqls.nvim")
     use("nvim-telescope/telescope-live-grep-args.nvim")
 end)
 
@@ -351,12 +350,6 @@ for _, lsp in ipairs(servers) do
 	})
 end
 
-require("lspconfig").sqls.setup({
-	on_attach = function(client, bufnr)
-		require("sqls").on_attach(client, bufnr)
-		on_attach(client, bufnr)
-	end,
-})
 
 -- Example custom server
 -- Make runtime files discoverable to the server
@@ -427,7 +420,7 @@ lspconfig.rust_analyzer.setup({
 	},
 })
 
--- lspconfig.tailwindcss.setup({})
+lspconfig.tailwindcss.setup({})
 lspconfig.svelte.setup({
 	on_attach = on_attach,
 	capabilities = capabilities,
