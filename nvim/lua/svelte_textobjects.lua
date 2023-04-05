@@ -9,39 +9,20 @@ local hlgroup = "Comment"
 
 local M = {}
 
-local function describe(node)
-	if node == nil then
-		vim.notify("node is nil -- cannot print range", vim.log.levels.ERROR)
-	end
-	local res = Q.exec_query("(tag_name) @name", node)
-	local text = vim.treesitter.query.get_node_text(res[1].name, 0)
-
-	local r0, c0, r1, c1 = node:range()
-	local s = string.format("%s implied range (%s, %s) -> (%s, %s)", text, r0 + 1, c0 - 1, r1 + 1, c1 - 1)
-	P(s)
-	return s
-end
-M.describe = describe
-
 local function goto_node(node, goto_end)
 	ts_utils.goto_node(node, goto_end or false, true)
 end
 
 local function set_node(node)
-	local old = NODE
 	NODE = node
 	if highlight_active and (NODE ~= nil) then
 		vim.api.nvim_buf_clear_namespace(0, usage_namespace, 0, -1)
 		-- ts_utils.highlight_node(NODE, 0, usage_namespace, "luaTSComment")
 		local r0, c0, r1, c1 = NODE:range()
-		print("in here", r0, c0, r1, c1)
 		vim.highlight.range(0, usage_namespace, hlgroup, { 0, 0 }, { r0, c0 })
 		vim.highlight.range(0, usage_namespace, hlgroup, { r1, c1 }, { vim.fn.line("$"), 1000 })
-
-		-- ts_utils.highlight_range(NODE, 0, usage_namespace, "luaTSComment")
-		-- ts_utils.highlight_node(NODE, 0, usage_namespace, "luaTSComment")
 	end
-	-- print_range(NODE)
+	return NODE
 end
 
 local function toggle_highlight()
@@ -61,7 +42,6 @@ local function toggle_highlight()
 	else
 		vim.api.nvim_buf_clear_namespace(0, usage_namespace, 0, -1)
 	end
-	describe(NODE)
 end
 
 local function clear_node()
@@ -73,30 +53,12 @@ local function closest_xml_tag()
 	return Q.first_ancestor(ts_utils.get_node_at_cursor(0), "element", false)
 end
 
-local function delete_node(node)
-	-- utils.vim_motion
-	local r0, c0, r1, c1 = node:range()
-	vim.api.nvim_buf_set_mark(0, "a", r1 + 1 + 1, c1, {})
-	vim.api.nvim_buf_set_lines(0, r0, r1 + 1, false, {})
-	utils.vim_motion("`a")
-end
-
 --- mutates state; sets NODE to be the parent node
 local function parent_node()
-	local tmp = vim.fn.getpos(".")
-	local line, col = tmp[2] - 1, tmp[3] - 1 -- ensure zero-based
-	if NODE ~= nil and (not ts_utils.is_in_node_range(NODE, line, col)) then
-		P("not in range")
-		set_node(closest_xml_tag())
+	if NODE == nil then
 		return
 	end
-
-	if NODE == nil then
-		set_node(closest_xml_tag())
-	else
-		set_node(Q.first_ancestor(NODE, "element", true))
-	end
-	goto_node(NODE)
+	set_node(NODE:parent())
 end
 
 --- @return table tsnode
@@ -126,55 +88,6 @@ local function goto_sibling(next)
 	goto_node(NODE)
 end
 
-local function visually_select_current_node()
-	local c = vim.v.count1 - 1
-	local n = ts_utils.get_node_at_cursor(0)
-	local node = Q.first_ancestor(n, "element", false)
-	while (c > 0) and (node ~= nil) do
-		n = Q.first_ancestor(node, "element", true)
-		if n ~= nil then
-			node = n
-		else
-			break
-		end
-		c = c - 1
-	end
-	local r0, c0, r1, c1 = node:range()
-	vim.fn.cursor(r0 + 1, c0 + 1)
-	utils.vim_motion("m<")
-	vim.fn.cursor(r1 + 1, c1 + 1)
-	utils.vim_motion("m>")
-	utils.vim_motion("gv", false)
-	NODE = node
-end
-
-vim.keymap.set("o", "ib", visually_select_current_node, {})
-vim.keymap.set("x", "ib", visually_select_current_node, {})
-vim.keymap.set("n", "<space><space>x", visually_select_current_node)
-vim.keymap.set("n", "gP", function()
-	clear_node()
-	parent_node()
-end)
-vim.keymap.set("n", "]s", function()
-	goto_sibling(true)
-end)
-vim.keymap.set("n", "[s", function()
-	goto_sibling(false)
-end)
-vim.keymap.set("n", "[p", parent_node)
-vim.keymap.set("n", "]p", parent_node)
-vim.keymap.set("n", "<leader><leader>i", function()
-	toggle_highlight()
-	set_node(closest_xml_tag())
-end)
-vim.keymap.set("n", "<leader><leader>p", function()
-	local node = M.first_xml_element_after_cursor()
-	if not node then
-		vim.notify("node is nil", vim.log.levels.ERROR)
-	end
-	describe(node)
-end)
-
 local g = vim.api.nvim_create_augroup("XML-group", { clear = true })
 vim.api.nvim_create_autocmd("CursorMoved", {
 	group = g,
@@ -186,6 +99,164 @@ vim.api.nvim_create_autocmd("CursorMoved", {
 	end,
 })
 
--- vim.keymap.set("n", "dat", function() delete_node(NODE) end)
+for _, event in pairs({ "BufWritePost", "TextChanged" }) do
+	vim.api.nvim_create_autocmd(event, {
+		group = g,
+		pattern = { "*.svelte" },
+		callback = function()
+			if highlight_active then
+				set_node(closest_xml_tag())
+			end
+		end,
+	})
+end
+
+-- replace content with text
+local function node_replace(node, text)
+	local range = ts_utils.node_to_lsp_range(node)
+	local edit = { range = range, newText = text }
+	vim.lsp.util.apply_text_edits({ edit }, 0, "utf-8")
+end
+local function node_text(node)
+	return vim.treesitter.query.get_node_text(node, 0, { concat = true })
+end
+
+-- moves cursor to the node. if atEnd is true, then moves it to the end
+-- if colOffset is set, move cursor additionally with that offset
+local function cursor(node, atEnd, colOffset)
+	local _, _, end_line, end_col = ts_utils.get_node_range(node)
+	vim.fn.cursor(end_line + 1, end_col + (colOffset or 0))
+end
+
+local function indent(text, level)
+	local i = string.rep(" ", level)
+	return i .. string.gsub(text, "\n", "\n" .. i)
+end
+
+--
+-- wraps the current (highlighted) node with a new html element
+local function wrap(node)
+	local tag = vim.fn.input("tag: ")
+	if tag == "" then
+		return
+	end
+	local currentText = vim.treesitter.query.get_node_text(node, 0, { concat = true })
+	local containsNewline = string.match(currentText, "\n") ~= nil
+	local replacement
+	if containsNewline then
+		local range = ts_utils.node_to_lsp_range(node)
+		local offset = range.start.character
+
+		replacement = string.format(
+			"%s\n%s\n%s",
+			indent("<" .. tag .. ">", 0),
+			"    " .. currentText,
+			indent("</" .. tag .. ">", offset)
+		)
+	else
+		replacement = string.format("<%s>%s</%s>", tag, currentText, tag)
+	end
+	node_replace(node, replacement)
+end
+
+-- removes the outermost layer of the node
+local function peel(node)
+	if node == nil then
+		return
+	end
+	for c in node:iter_children() do
+		if c:type() == "start_tag" or c:type() == "end_tag" then
+			node_replace(c, "")
+		end
+	end
+	-- node_replace(node, "peeled!")
+	-- node, go through direct children, and
+	-- remove start_tag and end_tag
+	set_node(closest_xml_tag())
+end
+
+local function get_child(node, opts)
+	if node == nil then
+		return nil
+	end
+	local n = 1
+	for c in node:iter_children() do
+		if opts.type == c:type() then
+			return c
+		end
+		if opts.nth == n then
+			return c
+		end
+		n = n + 1
+	end
+	return nil
+end
+
+local function edit_class(node)
+	if node == nil then
+		return
+	end
+
+	local tagNode = get_child(node, { nth = 1 })
+	local caps = Q.exec_query(
+		[[(attribute (attribute_name) @name (quoted_attribute_value) @value (#match? @name "class"))]],
+		tagNode
+	)
+	if #caps == 0 then
+		local n = Q.exec_query([[(start_tag (tag_name)@tagname)]], node)[1].tagname
+		node_replace(n, string.format([[%s class=""]], node_text(n)))
+		cursor(n, true)
+	else
+		local valueNode = caps[1].value
+		cursor(valueNode, true)
+	end
+	vim.fn.execute("startinsert")
+end
+
+vim.keymap.set({ "n" }, "<leader>vw", function()
+	wrap(closest_xml_tag())
+end, {
+	silent = true,
+})
+
+vim.keymap.set({ "n" }, "<leader>vd", function()
+	local node = NODE or set_node(closest_xml_tag())
+	peel(node)
+end, {
+	silent = true,
+})
+
+vim.keymap.set("n", "<leader>vc", function()
+	-- edit class of current node
+	-- local node = NODE or set_node(closest_xml_tag())
+	edit_class(closest_xml_tag())
+end, { silent = true })
+
+vim.keymap.set("n", "<Down>", function()
+	set_node(NODE:next_sibling())
+	cursor(NODE)
+end)
+vim.keymap.set("n", "<Up>", function()
+	set_node(NODE:prev_sibling())
+	cursor(NODE)
+end)
+
+vim.keymap.set("n", "<Left>", function()
+	parent_node()
+	goto_node(NODE)
+	cursor(NODE)
+end)
+vim.keymap.set("n", "<Right>", function()
+	local c = get_child(NODE, { nth = 1 })
+	if c ~= nil then
+		set_node(c)
+		cursor(c)
+		return
+	end
+end)
+vim.keymap.set("n", "<leader>vh", function()
+	toggle_highlight()
+	set_node(closest_xml_tag())
+end)
 
 return M
