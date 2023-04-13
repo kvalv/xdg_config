@@ -67,19 +67,25 @@ require("packer").startup(function()
     })
     use("nanotee/sqls.nvim")
     use("phaazon/mind.nvim")
+    use("rafi/awesome-vim-colorschemes")
+    use("github/copilot.vim")
 end)
 
 --Set colorscheme (order is important here)
 vim.o.termguicolors = true
 vim.g.onedark_terminal_italics = 2
-vim.cmd([[colorscheme onedark]])
+-- vim.cmd([[colorscheme onedark]])
+-- vim.cmd([[colorscheme carbonized-light]])
+vim.cmd([[colorscheme gruvbox]])
+-- vim.cmd "colorscheme schekaur"
 
 require("lualine").setup({
     options = {
-        theme = "nord",
+        theme = "papercolor_light",
+        globalstatus = true,
     },
     sections = {
-        lualine_a = { "mode", { "filename", path = 2 } },
+        lualine_a = { "mode", { "filename", path = 1 } },
         lualine_b = {},
         lualine_c = {
             { "diagnostics", always_visible = true, symbols = { error = "E", warn = "W", info = "I", hint = "H" } },
@@ -152,6 +158,9 @@ require("gitsigns").setup({
         map('n', '<leader>hR', gs.reset_buffer)
         map('n', '<leader>hd', gs.preview_hunk)
         map('n', '<leader>hb', function() gs.blame_line { full = true } end)
+        map('n', '[h', gs.prev_hunk)
+        map('n', ']h', gs.next_hunk)
+        map("n", "<leader>hD", gs.setqflist) -- make a qflist of this buffer
 
         -- Text object
         map({ 'o', 'x' }, 'ih', ':<C-U>Gitsigns select_hunk<CR>')
@@ -226,8 +235,11 @@ end, {
 })
 
 vim.keymap.set("n", "<leader>sp", function()
-
-    require("telescope.builtin").live_grep()
+    local opts = {}
+    if vim.b.netrw_curdir then
+        opts.cwd = vim.b.netrw_curdir
+    end
+    require("telescope.builtin").live_grep(opts)
 end, {
     noremap = true,
     silent = true,
@@ -547,14 +559,15 @@ vim.opt.grepprg = "rg --vimgrep --no-heading --smart-case"
 vim.keymap.set("n", "<leader>g", ":silent grep<Space>")
 
 vim.keymap.set("n", "<leader>F", function()
-    if vim.fn.getfperm(".files.toml") ~= "" then
-        local search_dirs = vim.tbl_filter(function(line)
+    local opts = {}
+    if vim.b.netrw_curdir then
+        opts.cwd = vim.b.netrw_curdir
+    elseif vim.fn.getfperm(".files.toml") ~= "" then
+        opts.search_dirs = vim.tbl_filter(function(line)
             return (not vim.startswith(line, '#')) and (not vim.startswith(line, "[")) and line ~= ""
         end, vim.fn.readfile(".files.toml"))
-        require("telescope.builtin").find_files { search_dirs = search_dirs }
-    else
-        -- require("telescope.builtin").find_files { cwd = vim.env.service }
     end
+    require("telescope.builtin").find_files(opts)
 end)
 
 vim.keymap.set("n", "<leader>r", function()
