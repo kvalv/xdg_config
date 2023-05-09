@@ -108,6 +108,22 @@ M.special_files = function(opts)
 	}):find()
 end
 
+M.git_cached_files = function()
+    local opts = {}
+    local command_list = vim.split("git diff --name-only --diff-filter=AM", " ")
+	pickers.new(opts, {
+		prompt_title = "git files",
+		finder = finders.new_oneshot_job(command_list, opts),
+        previewer = require('telescope.config').values.grep_previewer({}),
+		sorter = conf.generic_sorter(opts),
+	}):find()
+end
+vim.keymap.set("n", "<leader>d", function()
+    M.git_cached_files()
+end)
+
+
+
 -- TODO: I want a telescope for finding lua files ;  -- is the root directory
 M.py3rdpartyfiles = function()
 	require("telescope.builtin").find_files({
@@ -124,11 +140,6 @@ M.py3rdpartyfiles = function()
 		end,
 	})
 end
-
-vim.keymap.set("n", "<space>P", function()
-    M.py3rdpartyfiles()
-end)
-
 
 vim.keymap.set("n", "zl", function() 
     require("utils").vim_motion(":write")
