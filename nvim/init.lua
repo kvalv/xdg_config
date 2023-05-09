@@ -79,6 +79,14 @@ vim.g.onedark_terminal_italics = 2
 vim.cmd([[colorscheme gruvbox]])
 -- vim.cmd "colorscheme schekaur"
 
+local function gitstatus()
+    local gs = vim.b.gitsigns_status_dict
+    local added = gs.added or 0
+    local changed = gs.changed or 0
+    local removed = gs.removed or 0
+    return string.format("%s/%s/%s", added, changed, removed)
+end
+
 require("lualine").setup({
     options = {
         theme = "papercolor_light",
@@ -91,8 +99,8 @@ require("lualine").setup({
             { "diagnostics", always_visible = true, symbols = { error = "E", warn = "W", info = "I", hint = "H" } },
         },
         lualine_x = {},
-        lualine_y = {},
-        lualine_z = { require("orgmode.clock").get_statusline },
+        lualine_y = {gitstatus },
+        lualine_z = {},
     },
 })
 
@@ -153,13 +161,12 @@ require("gitsigns").setup({
         -- Actions
         map({ 'n', 'v' }, '<leader>hs', ':Gitsigns stage_hunk<CR>')
         map({ 'n', 'v' }, '<leader>hr', ':Gitsigns reset_hunk<CR>')
-        map('n', '<leader>hS', gs.stage_buffer)
         map('n', '<leader>hu', gs.undo_stage_hunk)
         map('n', '<leader>hR', gs.reset_buffer)
         map('n', '<leader>hd', gs.preview_hunk)
-        map('n', '<leader>hb', function() gs.blame_line { full = true } end)
-        map('n', '[h', gs.prev_hunk)
-        map('n', ']h', gs.next_hunk)
+        map('n', '<leader>gb', function() gs.blame_line { full = true } end)
+        map('n', '[g', gs.prev_hunk)
+        map('n', ']g', gs.next_hunk)
         map("n", "<leader>hD", gs.setqflist) -- make a qflist of this buffer
 
         -- Text object
