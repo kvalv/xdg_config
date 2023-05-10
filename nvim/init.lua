@@ -567,12 +567,18 @@ vim.keymap.set("n", "<leader>g", ":silent grep<Space>")
 
 vim.keymap.set("n", "<leader>F", function()
     local opts = {}
-    if vim.b.netrw_curdir then
-        opts.cwd = vim.b.netrw_curdir
-    elseif vim.fn.getfperm(".files.toml") ~= "" then
+    local base = string.gsub(vim.fn.system("git rev-parse --show-toplevel"), "\n", "")
+    local toml = base .. "/.files.toml"
+    if vim.v.shell_error ~= 0 then
+        vim.notify("not a git repo", vim.log.levels.ERROR)
+        return
+    end
+    -- if vim.b.netrw_curdir then
+    --     opts.cwd = vim.b.netrw_curdir
+    if vim.fn.getfperm(toml) ~= "" then
         opts.search_dirs = vim.tbl_filter(function(line)
             return (not vim.startswith(line, '#')) and (not vim.startswith(line, "[")) and line ~= ""
-        end, vim.fn.readfile(".files.toml"))
+        end, vim.fn.readfile(toml))
     end
     require("telescope.builtin").find_files(opts)
 end)
