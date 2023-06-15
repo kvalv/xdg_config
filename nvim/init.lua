@@ -76,7 +76,8 @@ vim.o.termguicolors = true
 vim.g.onedark_terminal_italics = 2
 -- vim.cmd([[colorscheme onedark]])
 -- vim.cmd([[colorscheme carbonized-light]])
-vim.cmd([[colorscheme gruvbox]])
+-- vim.cmd([[colorscheme gruvbox]])
+vim.cmd([[colorscheme nord]])
 -- vim.cmd "colorscheme schekaur"
 
 local function gitstatus()
@@ -86,6 +87,8 @@ local function gitstatus()
     local removed = gs.removed or 0
     return string.format("%s/%s/%s", added, changed, removed)
 end
+
+-- vim.b.gitsigns_status_dict
 
 require("lualine").setup({
     options = {
@@ -97,9 +100,10 @@ require("lualine").setup({
         lualine_b = {},
         lualine_c = {
             { "diagnostics", always_visible = true, symbols = { error = "E", warn = "W", info = "I", hint = "H" } },
+            -- { "diff" },
         },
         lualine_x = {},
-        lualine_y = {gitstatus },
+        lualine_y = { gitstatus },
         lualine_z = {},
     },
 })
@@ -406,7 +410,7 @@ lspconfig.pyright.setup({
     capabilities = capabilities,
 })
 
-lspconfig.sumneko_lua.setup({
+lspconfig.lua_ls.setup({
     cmd = { vim.env.HOME .. "/.local/share/nvim/lsp_servers/sumneko_lua/extension/server/bin/lua-language-server" },
     on_attach = on_attach,
     capabilities = capabilities,
@@ -461,7 +465,7 @@ lspconfig.rust_analyzer.setup({
     },
 })
 
-lspconfig.tailwindcss.setup({})
+-- lspconfig.tailwindcss.setup({})
 lspconfig.svelte.setup({
     on_attach = on_attach,
     capabilities = capabilities,
@@ -515,15 +519,17 @@ vim.keymap.set({ "i", "s" }, "<C-h>", function()
     end
 end)
 
+local formatting_sources = {}
+-- if vim.fn.executable("stylua") == 1 then
+--     table.insert(formatting_sources, require("null-ls").builtins.formatting.stylua)
+-- end
+if vim.fn.executable("eslint") == 1 then
+    table.insert(formatting_sources, require("null-ls").builtins.formatting.eslint_d)
+end
 require("null-ls").setup({
+    debug = true,
     sources = {
-        require("null-ls").builtins.formatting.stylua,
-
-        -- require("null-ls").builtins.code_actions.gitsigns,
-        -- require("null-ls").builtins.formatting.black.with({
-        -- 	command = "black",
-        -- 	args = { "--quiet", "--fast", "--preview", "-" },
-        -- }),
+        require("null-ls").builtins.formatting.eslint,
     },
 })
 
