@@ -14,9 +14,16 @@ vim.keymap.set("n", "<F1>", function() require("harpoon.term").sendCommand(1, 1)
 vim.keymap.set("n", "<F2>", function() require("harpoon.term").sendCommand(1, 2) end, {nowait=true})
 vim.keymap.set("n", "<F3>", function() require("harpoon.term").sendCommand(1, 3) end, {nowait=true})
 
-vim.api.nvim_set_keymap("n", "<leader>1", ':lua require("harpoon.term").gotoTerminal(1)<CR>', { noremap = true })
-vim.api.nvim_set_keymap("n", "<leader>2", ':lua require("harpoon.term").gotoTerminal(2)<CR>', { noremap = true })
-vim.api.nvim_set_keymap("n", "<leader>3", ':lua require("harpoon.term").gotoTerminal(3)<CR>', { noremap = true })
+for i = 1, 3, 1 do
+    vim.keymap.set("n", "<leader>" .. i, function()
+        require("harpoon.term").gotoTerminal(i)
+        vim.cmd.file("term " .. i)
+    end, { nowait = true })
+end
+
+-- vim.api.nvim_set_keymap("n", "<leader>1", ':lua require("harpoon.term").gotoTerminal(1)<CR>', { noremap = true })
+-- vim.api.nvim_set_keymap("n", "<leader>2", ':lua require("harpoon.term").gotoTerminal(2)<CR>', { noremap = true })
+-- vim.api.nvim_set_keymap("n", "<leader>3", ':lua require("harpoon.term").gotoTerminal(3)<CR>', { noremap = true })
 vim.api.nvim_set_keymap("n", "<leader>4", ':lua require("harpoon.term").gotoTerminal(4)<CR>', { noremap = true })
 vim.api.nvim_set_keymap("n", "<leader>5", ':lua require("harpoon.term").gotoTerminal(5)<CR>', { noremap = true })
 vim.api.nvim_set_keymap("n", "g1", ':lua require("harpoon.term").sendCommand(1, 1)  <CR>', { noremap = true })

@@ -1,4 +1,5 @@
 local pickers = require("telescope.pickers")
+local sorters = require "telescope.sorters"
 local actions = require("telescope.actions")
 local previewers = require "telescope.previewers"
 local make_entry = require "telescope.make_entry"
@@ -154,9 +155,38 @@ end)
 vim.keymap.set("n", "<leader>hm", function()
     local branch = vim.fn.systemlist("git rev-parse --abbrev-ref HEAD")[1]
     local path = vim.fn.expand("%")
-    vim.fn.writefile({branch .. " " .. path}, vim.env.HOME .. "/.cache/branch-files", "a")
+    vim.fn.writefile({ branch .. " " .. path }, vim.env.HOME .. "/.cache/branch-files", "a")
 end)
 
+
+local function live_grep_git_files(opts)
+    opts = opts or {}
+    opts.cwd = opts.cwd and vim.fn.expand(opts.cwd) or vim.loop.cwd()
+    local files = vim.fn.systemlist("git branch-files")
+    local live_grepper = finders.new_job(function(prompt)
+        P("prompt", prompt, "files", files)
+        if not prompt or prompt == "" then
+            return nil
+        end
+        return vim.tbl_flatten { prompt, files }
+    end, opts.entry_maker or make_entry.gen_from_file(opts), opts.max_results, opts.cwd)
+    pickers
+        .new(opts, {
+            prompt_title = "git branch-files",
+            finder = live_grepper,
+            previewer = conf.grep_previewer(opts),
+            -- TODO: It would be cool to use `--json` output for this
+            -- and then we could get the highlight positions directly.
+            sorter = sorters.highlighter_only(opts),
+            attach_mappings = function(_, map)
+                map("i", "<c-space>", actions.to_fuzzy_refine)
+                return true
+            end,
+        })
+        :find()
+end
+
+vim.keymap.set("n", "<leader>sd", function() live_grep_git_files() end, { noremap = true, silent = true, })
 
 M.git_checkout = function()
     local opts = {}
