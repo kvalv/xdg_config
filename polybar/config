@@ -29,7 +29,7 @@ alert = #bd2c40
 
 [bar/example]
 ;monitor = ${env:MONITOR:HDMI-1}
-monitor = HDMI-1
+monitor = eDP-1
 monitor-fallback = HDMI-1
 width = 100%
 height = 32
@@ -60,7 +60,7 @@ font-2 = siji:pixelsize=18;1
 
 modules-left = i3
 modules-center = date xkeyboard
-modules-right = pulseaudio wlan battery temperature
+modules-right = pulseaudio wlan ping battery
 
 cursor-click = pointer
 cursor-scroll = ns-resize
@@ -321,6 +321,10 @@ exec = /home/mikael/.config/polybar/system-bluetooth-bluetoothctl.sh
 tail = true
 click-left = /home/mikael/.config/polybar/system-bluetooth-bluetoothctl.sh --toggle &
 
+[module/ping]
+type = custom/script
+exec = while read -r line; do echo $line | grep -E -o 'time=[0-9]+'  | cut -d= -f2 ; done < <(ping -i 10 google.com)
+tail = true
 
 [module/battery]
 type = internal/battery
