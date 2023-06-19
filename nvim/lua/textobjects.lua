@@ -111,6 +111,11 @@ local function cursor(node, atEnd, colOffset)
 end
 
 local function indent(text, level, initialOffset)
+    if level < 0 then
+        local tmp = string.gsub(text, "\n" .. string.rep(" ", -level), "\n")
+        return tmp
+    end
+
     local i = string.rep(" ", level)
     local o = string.rep(" ", initialOffset or level)
     return o .. string.gsub(text, "\n", "\n" .. i)
@@ -135,21 +140,52 @@ local function wrap(node)
     )
     node_replace(node, replacement)
 end
+local function remove_first_line(text)
+    return string.gsub(text, "^[^\n]*\n", "")
+end
+local function remove_last_line(text)
+    return string.gsub(text, "\n[^\n]*$", "")
+end
+
+local function dedent(text, offset)
+    local parts = vim.tbl_map(function(line)
+            local p = "^"
+            for _ = 1, offset do
+                p = p .. "%s?"
+            end
+            local replaced = string.gsub(line, p, "")
+            return replaced
+        end,
+        vim.split(text, "\n")
+    )
+    return table.concat(parts, "\n")
+end
 
 -- removes the outermost layer of the node
 local function peel(node)
     if node == nil then
         return
     end
+    local rest = ""
+    local function should_remove(c)
+        return c:type() == "start_tag" or c:type() == "end_tag" or c:type() == "jsx_opening_element" or
+            c:type() == "jsx_closing_element"
+    end
+
     for c in node:iter_children() do
-        if c:type() == "start_tag" or c:type() == "end_tag" then
-            node_replace(c, "")
-        end
-        if c:type() == "jsx_opening_element" or c:type() == "jsx_closing_element" then
-            node_replace(c, "")
+        if should_remove(c) then
+            -- node_replace(c, "")
+        else
+            rest = rest .. node_text(c)
         end
     end
-    set_node(closest_xml_tag())
+
+    local res = dedent(remove_first_line(remove_last_line(rest)), vim.bo.shiftwidth)
+
+    local range = ts_utils.node_to_lsp_range(node)
+    node_replace(node, res)
+    vim.fn.cursor(range.start.line + 1, range.start.character)
+    vim.cmd("normal! <<")
 end
 
 local function get_child(node, opts)
