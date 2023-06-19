@@ -411,7 +411,6 @@ lspconfig.pyright.setup({
 })
 
 lspconfig.lua_ls.setup({
-    cmd = { vim.env.HOME .. "/.local/share/nvim/lsp_servers/sumneko_lua/extension/server/bin/lua-language-server" },
     on_attach = on_attach,
     capabilities = capabilities,
     settings = {
@@ -563,6 +562,7 @@ require("plugins")
 require("org_utils")
 require("snippets")
 require("telescope_extensions")
+require("textobjects")
 require("work")
 
 U = require("utils")

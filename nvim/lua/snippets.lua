@@ -22,7 +22,6 @@ local conds = require("luasnip.extras.expand_conditions")
 local events = require("luasnip.util.events")
 
 local utils = require("utils")
-local sv = require("svelte_textobjects")
 
 ls.cleanup()
 
