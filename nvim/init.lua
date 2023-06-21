@@ -212,12 +212,6 @@ end, {
     noremap = true,
     silent = true,
 })
-vim.keymap.set("n", "<leader>sd", function()
-    require("telescope.builtin").grep_string()
-end, {
-    noremap = true,
-    silent = true,
-})
 vim.keymap.set("n", "<leader>t", function()
     -- vim.fn.tagfiles() gives a bunch of stupid names that start with term
     -- if the current buffer is the terminal. Let's filter those out before

@@ -97,7 +97,6 @@ M.special_files = function(opts)
             path = j.path,
             scode = j.pattern,
         }
-
     end
 
     local command_list = vim.split("cat mytags", " ")
@@ -131,9 +130,11 @@ M.git_diffed_files = function()
     pickers.new(opts, {
         prompt_title = key,
         finder = finders.new_oneshot_job(command_list, opts),
-        previewer = require("telescope.previewers.term_previewer").new_termopen_previewer({ get_command = function(entry)
-            return "git diff origin/master  " .. entry.value
-        end }),
+        previewer = require("telescope.previewers.term_previewer").new_termopen_previewer({
+            get_command = function(entry)
+                return "git diff origin/master  " .. entry.value
+            end
+        }),
         sorter = conf.generic_sorter(opts),
         attach_mappings = function(prompt_bufnr, map)
             map("i", "<tab>", function()
@@ -162,21 +163,34 @@ end)
 local function live_grep_git_files(opts)
     opts = opts or {}
     opts.cwd = opts.cwd and vim.fn.expand(opts.cwd) or vim.loop.cwd()
-    local files = vim.fn.systemlist("git branch-files")
-    local live_grepper = finders.new_job(function(prompt)
-        P("prompt", prompt, "files", files)
-        if not prompt or prompt == "" then
-            return nil
-        end
-        return vim.tbl_flatten { prompt, files }
-    end, opts.entry_maker or make_entry.gen_from_file(opts), opts.max_results, opts.cwd)
+    opts.layout_strategy = opts.layout_strategy or "vertical"
+
+    local finder = finders.new_job(function(prompt) return { "live-grep-branch", prompt } end,
+        function(line)
+            -- keys: file, line, text
+            local data = vim.json.decode(line)
+            local displayFile = string.gsub(data.file, "^" .. opts.cwd .. "/", "")
+            if string.len(displayFile) > 50 then
+                displayFile = "..." .. string.sub(displayFile, -50)
+            end
+
+            return {
+                valid = true,
+                value = line,
+                ordinal = line,
+                path = data.file,
+                lnum = data.line,
+                display = displayFile .. ":" .. data.line .. "  " .. data.text,
+            }
+        end,
+        opts.cwd
+    )
+
     pickers
         .new(opts, {
             prompt_title = "git branch-files",
-            finder = live_grepper,
-            previewer = conf.grep_previewer(opts),
-            -- TODO: It would be cool to use `--json` output for this
-            -- and then we could get the highlight positions directly.
+            finder = finder,
+            previewer = previewers.vimgrep.new(opts),
             sorter = sorters.highlighter_only(opts),
             attach_mappings = function(_, map)
                 map("i", "<c-space>", actions.to_fuzzy_refine)
@@ -208,24 +222,6 @@ end
 vim.keymap.set("n", "<leader>gc", function()
     M.git_checkout()
 end)
-
-
--- TODO: I want a telescope for finding lua files ;  -- is the root directory
-M.py3rdpartyfiles = function()
-    require("telescope.builtin").find_files({
-        find_command = vim.split("rg --smart-case --files --color never ", " "),
-        search_dirs = { vim.env.VIRTUAL_ENV },
-        entry_maker = function(e)
-            local display = path_relative_to(e, vim.env.VIRTUAL_ENV) or e
-            display = e
-            return {
-                display = display,
-                value = e,
-                ordinal = e,
-            }
-        end,
-    })
-end
 
 
 vim.keymap.set("n", "zl", function()
