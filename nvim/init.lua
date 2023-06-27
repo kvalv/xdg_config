@@ -78,7 +78,7 @@ vim.g.onedark_terminal_italics = 2
 -- vim.cmd([[colorscheme carbonized-light]])
 -- vim.cmd([[colorscheme gruvbox]])
 vim.cmd([[colorscheme nord]])
--- vim.cmd "colorscheme schekaur"
+-- vim.cmd "colorscheme onehalfdark"
 
 local function gitstatus()
     local gs = vim.b.gitsigns_status_dict
@@ -97,9 +97,18 @@ require("lualine").setup({
     },
     sections = {
         lualine_a = { "mode", { "filename", path = 1 } },
-        lualine_b = {},
+        lualine_b = {
+            -- added, changed, removed, head (branch)
+            {}
+        },
         lualine_c = {
-            { "diagnostics", always_visible = true, symbols = { error = "E", warn = "W", info = "I", hint = "H" } },
+            function()
+                local g = vim.b.gitsigns_status_dict
+                return string.format("%s/%s/%s @%s", g.added, g.changed, g.removed, g.head)
+            end,
+            {
+                "diagnostics", always_visible = true, symbols = { error = "E", warn = "W", info = "I", hint = "H" }
+            },
             -- { "diff" },
         },
         lualine_x = {},
@@ -168,7 +177,6 @@ require("gitsigns").setup({
         map('n', '<leader>hu', gs.undo_stage_hunk)
         map('n', '<leader>hR', gs.reset_buffer)
         map('n', '<leader>hd', gs.preview_hunk)
-        map('n', '<leader>gb', function() gs.blame_line { full = true } end)
         map('n', '[g', gs.prev_hunk)
         map('n', ']g', gs.next_hunk)
         map("n", "<leader>hD", gs.setqflist) -- make a qflist of this buffer
@@ -258,18 +266,6 @@ end, {
 })
 vim.keymap.set("n", "<leader>?", function()
     require("telescope.builtin").oldfiles()
-end, {
-    noremap = true,
-    silent = true,
-})
-vim.keymap.set("n", "<leader>sc", function()
-    require("telescope_extensions").telescope_config_files()
-end, {
-    noremap = true,
-    silent = true,
-})
-vim.keymap.set("n", "<leader>sl", function()
-    require("telescope_extensions").packer_lua_files()
 end, {
     noremap = true,
     silent = true,
@@ -563,7 +559,6 @@ U = require("utils")
 require("units").init()
 
 vim.opt.grepprg = "rg --vimgrep --no-heading --smart-case"
-vim.keymap.set("n", "<leader>g", ":silent grep<Space>")
 
 vim.keymap.set("n", "<leader>F", function()
     local opts = {}
