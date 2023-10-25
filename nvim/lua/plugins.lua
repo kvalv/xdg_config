@@ -66,9 +66,6 @@ map("n", "t<C-l>", ":TestLast<CR>", options)
 map("n", "t<C-g>", ":TestVisit<CR>", options)
 vim.keymap.set("n", "<leader>,", "<Plug>PlenaryTestFile", options)
 
--- oscyank
-vim.keymap.set("v", "<leader>y", ":OSCYank<CR>", { noremap = true })
-
 -- orgmode
 require("orgmode").setup_ts_grammar()
 require("nvim-treesitter.configs").setup({
@@ -182,19 +179,34 @@ vim.api.nvim_create_autocmd({"BufWritePost"}, {pattern=".tagpatterns", group=id,
 end})
 
 
-vim.keymap.set({"v", "x"}, "Y", function() 
-    require("utils").vim_motion("")
-    vim.cmd("'<,'>w!/tmp/aaa")
-    vim.cmd("silent !xclip -sel c /tmp/aaa")
-    require("utils").vim_motion("gv")
-    print("copied to clipboard")
-end)
-vim.keymap.set("n", "Y", function()
-    local line = vim.api.nvim_get_current_line()
-    vim.cmd(".w!/tmp/aaa")
-    vim.cmd("silent !xclip -sel c -display :0 /tmp/aaa")
-    -- lua P({vim.fn.getpos("'>")[1], vim.fn.getpos("'>")[2]})
-    -- lua P({vim.fn.getpos("'<")[2], vim.fn.getpos("'<")[3]}, {vim.fn.getpos("'>")[2], vim.fn.getpos("'>")[3]})
-    -- vim.region
-    -- lua P(vim.region(0, {195,0 }, {196, 0}), "V", true)
-end)
+-- vim.keymap.set({"v", "x"}, "Y", function() 
+--     require("utils").vim_motion("")
+--     vim.cmd("'<,'>w!/tmp/aaa")
+--     vim.cmd("silent !xclip -sel c /tmp/aaa")
+--     require("utils").vim_motion("gv")
+--     print("copied to clipboard")
+-- end)
+-- oscyank
+vim.keymap.set({"n", "v", "x"}, "Y", function() 
+    -- press esc if in visual mode
+    if vim.fn.mode() == "v" then
+        vim.notify("pls leave visual mode", vim.log.levels.ERROR)
+        return
+        -- vim.cmd("normal! <ESC>")
+    end
+    local contents = require("utils").get_visual_selection()
+    local text = "silent! !echo '" .. contents .. "' | xclip -sel c"
+    -- vim.fn.cmd
+    vim.cmd(text)
+    -- lua vim.cmd.normal("!ls | xclip -sel c")
+end, { noremap = true })
+
+-- vim.keymap.set("n", "Y", function()
+--     local line = vim.api.nvim_get_current_line()
+--     vim.cmd(".w!/tmp/aaa")
+--     vim.cmd("silent !xclip -sel c -display :0 /tmp/aaa")
+--     -- lua P({vim.fn.getpos("'>")[1], vim.fn.getpos("'>")[2]})
+--     -- lua P({vim.fn.getpos("'<")[2], vim.fn.getpos("'<")[3]}, {vim.fn.getpos("'>")[2], vim.fn.getpos("'>")[3]})
+--     -- vim.region
+--     -- lua P(vim.region(0, {195,0 }, {196, 0}), "V", true)
+-- end)

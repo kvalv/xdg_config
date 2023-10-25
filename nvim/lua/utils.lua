@@ -137,4 +137,21 @@ M.on_save = function(callback)
     end
 end
 
+M.get_visual_selection = function()
+    local vstart = vim.fn.getpos("'<")
+    local vend = vim.fn.getpos("'>")
+    local col_start = vstart[3]
+    local col_end = vend[3]
+    local line_start = vstart[2]
+    local line_end = vend[2]
+    local lines = vim.fn.getline(line_start, line_end)
+    -- strip first line and last line
+    lines[1] = lines[1]:sub(col_start)
+    lines[#lines] = lines[#lines]:sub(1, col_end)
+    local text = table.concat(lines, "\n")
+    text = text:gsub("\\$", "")
+    return text
+
+end
+
 return M

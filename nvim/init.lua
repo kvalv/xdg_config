@@ -14,22 +14,22 @@ vim.cmd([[
 
 local use = require("packer").use
 require("packer").startup(function()
-    use("itchyny/vim-qfedit") -- quickfix
+    use("itchyny/vim-qfedit")     -- quickfix
     use("jremmen/vim-ripgrep")
     use("wbthomason/packer.nvim") -- Package manager
-    use("tpope/vim-fugitive") -- Git commands in nvim
-    use("tpope/vim-vinegar") -- netrw
-    use("tpope/vim-rhubarb") -- Fugitive-companion to interact with github
-    use("tpope/vim-commentary") -- "gc" to comment visual regions/lines
-    use("tpope/vim-unimpaired") -- for [<space> and friends
+    use("tpope/vim-fugitive")     -- Git commands in nvim
+    use("tpope/vim-vinegar")      -- netrw
+    use("tpope/vim-rhubarb")      -- Fugitive-companion to interact with github
+    use("tpope/vim-commentary")   -- "gc" to comment visual regions/lines
+    use("tpope/vim-unimpaired")   -- for [<space> and friends
     use("tpope/vim-surround")
     use("lambdalisue/suda.vim")
     use("ThePrimeagen/git-worktree.nvim")
-    use("ludovicchabant/vim-gutentags") -- Automatic tags management
+    use("ludovicchabant/vim-gutentags")            -- Automatic tags management
     use("nvim-treesitter/nvim-treesitter-context") -- sticky context
     -- UI to select things (files, grep results, open buffers...)
     use({ "nvim-telescope/telescope.nvim", requires = { "nvim-lua/plenary.nvim" } })
-    use("joshdick/onedark.vim") -- Theme inspired by Atom
+    use("joshdick/onedark.vim")                                                                     -- Theme inspired by Atom
     use({ "nvim-lualine/lualine.nvim", requires = { "kyazdani42/nvim-web-devicons", opt = true } }) -- Fancier statusline
     -- Add indentation guides even on blank lines
     use("lukas-reineke/indent-blankline.nvim")
@@ -40,10 +40,10 @@ require("packer").startup(function()
     -- Additional textobjects for treesitter
     use("nvim-treesitter/nvim-treesitter-textobjects")
     use("nvim-treesitter/playground")
-    use("neovim/nvim-lspconfig") -- Collection of configurations for built-in LSP client
+    use("neovim/nvim-lspconfig")           -- Collection of configurations for built-in LSP client
     use("jose-elias-alvarez/null-ls.nvim") -- formatting
     use("williamboman/nvim-lsp-installer")
-    use("hrsh7th/nvim-cmp") -- Autocompletion plugin
+    use("hrsh7th/nvim-cmp")                -- Autocompletion plugin
     use("hrsh7th/cmp-nvim-lsp")
     use("kosayoda/nvim-lightbulb")
     use("hrsh7th/cmp-buffer")
@@ -69,6 +69,31 @@ require("packer").startup(function()
     use("phaazon/mind.nvim")
     use("rafi/awesome-vim-colorschemes")
     use("github/copilot.vim")
+    use({
+        "nvim-neotest/neotest",
+        requires = {
+            "nvim-neotest/neotest-go",
+        },
+        config = function()
+            -- get neotest namespace (api call creates or returns namespace)
+            local neotest_ns = vim.api.nvim_create_namespace("neotest")
+            vim.diagnostic.config({
+                virtual_text = {
+                    format = function(diagnostic)
+                        local message =
+                            diagnostic.message:gsub("\n", " "):gsub("\t", " "):gsub("%s+", " "):gsub("^%s+", "")
+                        return message
+                    end,
+                },
+            }, neotest_ns)
+            require("neotest").setup({
+                -- your neotest config here
+                adapters = {
+                    require("neotest-go"),
+                },
+            })
+        end,
+    })
 end)
 
 --Set colorscheme (order is important here)
@@ -340,8 +365,8 @@ parser_config.sql = {
         url = "/tmp/tree-sitter-sql", -- local path or git repo
         files = { "src/parser.c" },
         -- optional entries:
-        branch = "main", -- default branch in case of git repo if different from master
-        generate_requires_npm = false, -- if stand-alone parser without npm dependencies
+        branch = "main",                        -- default branch in case of git repo if different from master
+        generate_requires_npm = false,          -- if stand-alone parser without npm dependencies
         requires_generate_from_grammar = false, -- if folder contains pre-generated src/parser.c
     },
     -- filetype = "sql", -- if filetype does not match the parser name
@@ -378,9 +403,18 @@ local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
 
 -- Enable the following language servers
-local servers = { "clangd", "rust_analyzer", "pyright", "tsserver", "gopls", "bashls", "yamlls", "jsonls" }
+local servers = { "clangd", "rust_analyzer", "pyright", "gopls", "bashls", "yamlls", "jsonls" }
 for _, lsp in ipairs(servers) do
     lspconfig[lsp].setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+    })
+end
+
+-- check if terraform-ls is exectuable
+local terraformls_bin = vim.fn.exepath("terraform-ls")
+if terraformls_bin ~= "" then
+    lspconfig.terraformls.setup({
         on_attach = on_attach,
         capabilities = capabilities,
     })
@@ -393,6 +427,17 @@ table.insert(runtime_path, "lua/?.lua")
 table.insert(runtime_path, "lua/?/init.lua")
 table.insert(runtime_path, "/tmp/nvim/?.lua")
 table.insert(runtime_path, "/tmp/nvim/lua/?.lua")
+
+lspconfig.denols.setup({
+    on_attach = on_attach,
+    capabilities = capabilities,
+    root_dir = lspconfig.util.root_pattern("deno.jsonc"),
+})
+lspconfig.tsserver.setup({
+    on_attach = on_attach,
+    capabilities = capabilities,
+    single_file_support = false,
+})
 
 lspconfig.pyright.setup({
     -- cmd = { vim.env.HOME .. "/.local/share/nvim/lsp_servers/python/node_modules/.bin/pyright-langserver", "--stdio" },
@@ -492,7 +537,7 @@ cmp.setup({
         }),
     },
     sources = {
-        { name = "luasnip", priority = 700 },
+        { name = "luasnip",  priority = 700 },
         { name = "nvim_lsp", priority = 100 },
         -- { name = "buffer", priority = 10 },
     },
@@ -554,9 +599,6 @@ require("snippets")
 require("telescope_extensions")
 require("textobjects")
 require("work")
-
-U = require("utils")
-require("units").init()
 
 vim.opt.grepprg = "rg --vimgrep --no-heading --smart-case"
 
