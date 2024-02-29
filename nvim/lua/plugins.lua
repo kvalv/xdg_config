@@ -66,34 +66,12 @@ map("n", "t<C-l>", ":TestLast<CR>", options)
 map("n", "t<C-g>", ":TestVisit<CR>", options)
 vim.keymap.set("n", "<leader>,", "<Plug>PlenaryTestFile", options)
 
--- orgmode
-require("orgmode").setup_ts_grammar()
-require("nvim-treesitter.configs").setup({
-	-- If TS highlights are not enabled at all, or disabled via `disable` prop, highlighting will fallback to default Vim syntax highlighting
-	highlight = {
-		enable = true,
-		disable = { "org" }, -- Remove this to use TS highlighter for some of the highlights (Experimental)
-		additional_vim_regex_highlighting = { "org" }, -- Required since TS highlighter doesn't support all syntax features (conceal)
-	},
-	ensure_installed = { "org" }, -- Or run :TSUpdate org
-})
-
-OrgInst = require("orgmode").setup({
-	org_agenda_files = { "~/notes.org" },
-	org_default_notes_file = "~/notes.org",
-	org_todo_keywords = { "TODO", "PROGRESS", "REVIEW", "|", "DONE" },
-})
+-- oscyank
+vim.keymap.set("v", "<leader>y", ":OSCYankVisual<CR>", { noremap = true })
 
 -- gutentags
 vim.g.gutentags_ctags_auto_set_tags = 0
 vim.g.gutentags_file_list_command = "git ls-files"
-
--- test-vim vim-test
-vim.cmd("let test#python#pytest#file_pattern='\\v([^/]+)\\.py$'")
-vim.cmd("let test#python#pytest#executable = 'docker-compose exec ignite-api ./manage.py test'")
-vim.cmd("let test#filename_modifier = ':s|api/ignite-api/||'")
-vim.cmd("let test#strategy = 'harpoon'")
-vim.cmd("let test#python#pytest#options = '-- -s '")
 
 -- lightbulb
 vim.cmd([[autocmd CursorHold,CursorHoldI * lua require'nvim-lightbulb'.update_lightbulb()]])

@@ -53,48 +53,57 @@ require("packer").startup(function()
     use("L3MON4D3/LuaSnip") -- Snippets plugin
     use("ThePrimeagen/harpoon")
     use("ojroques/vim-oscyank")
-    use("vim-test/vim-test")
-    use("nvim-orgmode/orgmode")
     use("lukas-reineke/headlines.nvim")
-    use("JoosepAlviste/nvim-ts-context-commentstring")
-    use({
-        "akinsho/org-bullets.nvim",
-        config = function()
-            require("org-bullets").setup({
-                symbols = { "◉", "○", "✸", "✿" },
-            })
-        end,
-    })
     use("nanotee/sqls.nvim")
     use("phaazon/mind.nvim")
     use("rafi/awesome-vim-colorschemes")
     use("github/copilot.vim")
-    use({
+    use("folke/flash.nvim")
+    use("chriskempson/base16-vim")
+    use { "vrischmann/tree-sitter-templ",
+        config = function()
+            require("tree-sitter-templ").setup({})
+        end
+    }
+    use {
         "nvim-neotest/neotest",
         requires = {
+            "nvim-lua/plenary.nvim",
+            "antoinemadec/FixCursorHold.nvim",
+            "nvim-treesitter/nvim-treesitter",
+            "mrcjkb/rustaceanvim",
             "nvim-neotest/neotest-go",
         },
-        config = function()
-            -- get neotest namespace (api call creates or returns namespace)
-            local neotest_ns = vim.api.nvim_create_namespace("neotest")
-            vim.diagnostic.config({
-                virtual_text = {
-                    format = function(diagnostic)
-                        local message =
-                            diagnostic.message:gsub("\n", " "):gsub("\t", " "):gsub("%s+", " "):gsub("^%s+", "")
-                        return message
-                    end,
-                },
-            }, neotest_ns)
-            require("neotest").setup({
-                -- your neotest config here
-                adapters = {
-                    require("neotest-go"),
-                },
-            })
-        end,
-    })
+    }
 end)
+
+require("neotest").setup({
+    adapters = {
+        require("rustaceanvim.neotest")({
+        }),
+        require("neotest-go")({
+            args = { "-timeout=5s" },
+        }),
+    },
+})
+local neotest_ns = vim.api.nvim_create_namespace("neotest")
+vim.diagnostic.config({
+    virtual_text = {
+        format = function(diagnostic)
+            local message =
+                diagnostic.message:gsub("\n", " "):gsub("\t", " "):gsub("%s+", " "):gsub("^%s+", "")
+            return message
+        end,
+    },
+}, neotest_ns)
+
+vim.keymap.set("n", "tn", function() require('neotest').run.run() end, { nowait = true })
+vim.keymap.set("n", "tt", function() require('neotest').run.run_last() end, { nowait = true })
+vim.keymap.set("n", "ts", function() require('neotest').summary.toggle() end, { nowait = true })
+vim.keymap.set("n", "tw", function() require('neotest').watch.toggle() end, { nowait = true })
+vim.keymap.set("n", "tm", function() require('neotest').summary.run_marked() end, { nowait = true })
+-- vim.keymap.set("n", "\\", RustRunnable, { buffer = bufnr, desc = "runnables" })
+
 
 --Set colorscheme (order is important here)
 vim.o.termguicolors = true
@@ -102,7 +111,9 @@ vim.g.onedark_terminal_italics = 2
 -- vim.cmd([[colorscheme onedark]])
 -- vim.cmd([[colorscheme carbonized-light]])
 -- vim.cmd([[colorscheme gruvbox]])
-vim.cmd([[colorscheme nord]])
+-- vim.cmd([[colorscheme nord]])
+-- vim.cmd([[colorscheme base16-grayscale-dark]])
+vim.cmd([[colorscheme base16-atelier-dune]])
 -- vim.cmd "colorscheme onehalfdark"
 
 local function gitstatus()
@@ -164,6 +175,21 @@ vim.g.indent_blankline_char = "┊"
 vim.g.indent_blankline_filetype_exclude = { "help", "packer" }
 vim.g.indent_blankline_buftype_exclude = { "terminal", "nofile" }
 vim.g.indent_blankline_show_trailing_blankline_indent = false
+
+-- -- flash
+-- local Config = require("flash.config")
+-- local Char = require("flash.plugins.char")
+-- for _, motion in ipairs({ "f", "t", "F", "T" }) do
+--   vim.keymap.set({ "n", "x", "o" }, motion, function()
+--     require("flash").jump(Config.get({
+--       mode = "char",
+--       search = {
+--         mode = Char.mode(motion),
+--         max_length = 1,
+--       },
+--     }, Char.motions[motion]))
+--   end)
+-- end
 
 -- Gitsigns
 require("gitsigns").setup({
@@ -347,9 +373,6 @@ require("nvim-treesitter.configs").setup({
             },
         },
     },
-    context_commentstring = {
-        enable = true,
-    },
 })
 require("nvim-treesitter.configs").setup({
     query_linter = {
@@ -403,9 +426,15 @@ local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require("cmp_nvim_lsp").default_capabilities(capabilities)
 
 -- Enable the following language servers
-local servers = { "clangd", "rust_analyzer", "pyright", "gopls", "bashls", "yamlls", "jsonls" }
+local servers = { "rust_analyzer", "pyright", "tsserver", "gopls", "bashls", "yamlls", "jsonls" }
 for _, lsp in ipairs(servers) do
     lspconfig[lsp].setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+    })
+end
+if vim.fn.executable("terraform-ls") == 1 then
+    lspconfig.terraformls.setup({
         on_attach = on_attach,
         capabilities = capabilities,
     })
@@ -444,6 +473,14 @@ lspconfig.pyright.setup({
     on_attach = on_attach,
     capabilities = capabilities,
 })
+require("lspconfig").clangd.setup {
+    on_attach = on_attach,
+    capabilities = require("cmp_nvim_lsp").default_capabilities(),
+    cmd = {
+        "clangd",
+        "--offset-encoding=utf-16",
+    },
+}
 
 lspconfig.lua_ls.setup({
     on_attach = on_attach,
@@ -473,6 +510,16 @@ lspconfig.lua_ls.setup({
     },
 })
 
+lspconfig.templ.setup({
+    on_attach = on_attach,
+    capabilities = capabilities,
+})
+vim.filetype.add({
+    extension = {
+        templ = "templ",
+    },
+})
+
 lspconfig.rust_analyzer.setup({
     -- cmd = { vim.env.HOME .. "/.local/share/nvim/lsp_servers/rust/rust-analyzer" },
     on_attach = on_attach,
@@ -499,7 +546,14 @@ lspconfig.rust_analyzer.setup({
     },
 })
 
--- lspconfig.tailwindcss.setup({})
+lspconfig.tailwindcss.setup({
+    filetypes = { "html", "css", "typescript", "svelte", "templ" },
+    init_options = {
+        userLanguages = {
+            templ = "html"
+        }
+    }
+})
 lspconfig.svelte.setup({
     on_attach = on_attach,
     capabilities = capabilities,
@@ -594,7 +648,6 @@ P = vim.pretty_print
 require("maps")
 require("settings")
 require("plugins")
-require("org_utils")
 require("snippets")
 require("telescope_extensions")
 require("textobjects")
