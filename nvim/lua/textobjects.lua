@@ -105,9 +105,14 @@ end
 
 -- moves cursor to the node. if atEnd is true, then moves it to the end
 -- if colOffset is set, move cursor additionally with that offset
-local function cursor(node, atEnd, colOffset)
-    local _, _, end_line, end_col = vim.treesitter.get_node_range(node)
-    vim.fn.cursor(end_line + 1, end_col + (colOffset or 0))
+local function cursor(node, atEnd)
+    local start_line, start_col, end_line, end_col = vim.treesitter.get_node_range(node)
+    if atEnd then
+        vim.fn.cursor(end_line + 1, end_col)
+        return
+    end
+    vim.fn.cursor(start_line + 1, start_col)
+    -- vim.fn.cursor(end_line + 1, end_col + (colOffset or 0))
 end
 
 local function indent(text, level, initialOffset)
@@ -252,21 +257,22 @@ vim.keymap.set("n", "<leader>vc", function()
     edit_class(closest_xml_tag())
 end, { silent = true })
 
-vim.keymap.set("n", "<Down>", function()
+vim.keymap.set("n", "<A-j>", function()
     set_node(NODE:next_sibling())
     cursor(NODE)
 end)
-vim.keymap.set("n", "<Up>", function()
+vim.keymap.set("n", "<A-k>", function()
     set_node(NODE:prev_sibling())
     cursor(NODE)
 end)
 
-vim.keymap.set("n", "<Left>", function()
+-- kemap alt j
+vim.keymap.set("n", "<A-h>", function()
     parent_node()
     goto_node(NODE)
     cursor(NODE)
 end)
-vim.keymap.set("n", "<Right>", function()
+vim.keymap.set("n", "<A-l>", function()
     local c = get_child(NODE, { nth = 1 })
     if c ~= nil then
         set_node(c)
