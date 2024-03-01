@@ -15,12 +15,10 @@ map("n", "<C-k>", "<C-W>k", options)
 map("n", "<C-l>", "<C-w>l", options)
 
 map("n", "<M-Space>", "", options)
-map("n", "<leader>w", ":w<CR>", options)
-map("n", "<leader>q", ":ccl<CR>", options)
-map("n", "<leader>q", ":ccl<CR>", options)
+map("n", "<leader>q", ":q<CR>", options)
 
 -- toggle quickfix window
-vim.keymap.set("n", "<leader>q", function()
+vim.keymap.set("n", "<leader>Q", function()
     local windows = vim.fn.getwininfo()
     for _, value in ipairs(windows) do
         if value.variables.quickfix_title ~= nil then
@@ -31,9 +29,7 @@ vim.keymap.set("n", "<leader>q", function()
     vim.cmd("copen")
     vim.cmd("wincmd p")
 end, { noremap = true, silent = true })
-
-map("n", "<leader>or", ':jobstart("docker-compose restart -t0 api migrate")<CR>', options)
-map("n", "<leader>ow", ':jobstart("docker-compose restart -t0 worker cuda-worker excl-worker")<CR>', options)
+map("n", "<leader>w", ":w<CR>", options)
 
 -- " terminal mappings
 map("t", "<C-x>", "<C-\\><C-n>", options)

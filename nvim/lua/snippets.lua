@@ -316,6 +316,15 @@ ls.add_snippets("all", {
     ),
 })
 
+-- typescript tsx
+ls.add_snippets("typescriptreact", {
+    s("fm", {
+        t"{formatMessage({defaultMessage:",
+        i(1, "message"),
+        t"})}",
+    }),
+})
+
 -- fmt_add("svelte", { trig = "input" }, {}, {
 -- 	i(1),
 -- }, '<input type="{}"/>')

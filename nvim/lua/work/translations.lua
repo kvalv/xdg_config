@@ -1,4 +1,5 @@
-local function hello()
+-- https://github.com/soimort/translate-shell
+local function translate()
     local fname = vim.fn.expand('%:t')
     local languages = {
         ["de-DE.json"] = "de",
@@ -12,10 +13,9 @@ local function hello()
     local contents = vim.fn.getreg("@")
     local cmd = "trans -b :" .. lang .. " '" .. contents .. "'"
     local out = vim.fn.system(cmd)
-    print(cmd .. " --> " .. "got out: '" .. out .. "'")
     vim.fn.setreg("a", out)
     vim.cmd.normal('ci"' .. out)
 
 end
 
-vim.keymap.set("n", "<leader>ht", hello, { noremap = true, silent = true })
+vim.keymap.set("n", "<leader>ht", translate, { noremap = true, silent = true })
